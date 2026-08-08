@@ -2,14 +2,10 @@
 
 A product delivery workflow skill for [Claude Code](https://claude.com/claude-code): take an idea through a relentless grilling interview, a synthesized spec with agreed test seams, a tracer-bullet phase plan, autonomous implementation via subagents, cross-model code review, and QA - all the way to merged PRs.
 
-```
-[chart (wayfinder map) - efforts too big for one spec; spawns one run per deliverable]
-     ↓
-idea (grill) → [research] → [prototype] → spec (synthesize) → plan → [ticket]   human-in-the-loop
-     → implement → review → [qa local]                                          AFK-capable
-     → push → [qa env] → complete                                               human checkpoints
-          ↑ (review/QA findings re-enter implement as targeted fixes)
-```
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/pipeline-dark.svg">
+  <img alt="The flow pipeline. An optional chart (wayfinder map) step feeds a human-in-the-loop band: idea (grill) → research (optional) → prototype (optional) → spec (confirm seams) → plan (tracer bullets) → ticket (optional). Then an autonomous AFK band: implement (frontier subagents) → review (cross-model) → local QA (optional), where review and QA findings re-enter implement as targeted fixes. Then a ship band with human checkpoints: push (branches and PRs) → env QA (optional) → complete (verify and clean up), with env QA findings also looping back to implement." src="assets/pipeline-light.svg" width="940">
+</picture>
 
 ## Why
 
