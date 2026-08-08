@@ -17,7 +17,7 @@ AFK invocation: start Claude Code with `--dangerously-skip-permissions`, run `/f
 1. **Read** `plan.md`, `spec.md`, and `state.yaml` from `.flow/<slug>/`, the `worktrees` and `commit_convention` settings from `.flow/config.yml`, and `simplicity-discipline.md` (this skill's directory) once - Part 1 is pasted into every subagent prompt below, implementers and fix agents alike. From the plan header, extract the **Test seams** for the phase prompts.
 
 2. **Check for findings re-entry.** If `qa-*.md` or `review-code.md` exists in the slug folder, read each file's latest `## QA Pass N` / `## Review Pass N` section and collect findings with Status = `open` (both docs use numbered findings tables with a Status column). If any exist, this run generates targeted fix subagents instead of re-running phases: one subagent per finding, scoped by its "Plan phase to fix" column (QA) or its anchor (review). Continue through steps 4-5 for worktree and toolchain setup, then apply the fix-mode rules:
-   - **Recovery first.** Per affected worktree: a dirty tree means a previous fix session died mid-fix (fix subagents commit their own work, so uncommitted changes are unfinished work) - `git reset --hard` to the newest fix checkpoint tag (HEAD if none) and let the finding re-run. Commits past the newest fix checkpoint tag with a clean tree: run the silent verify (step 7d); green - flip the matching finding(s) to `fixed`, matching by anchor-file overlap; red - reset to the tag.
+   - **Recovery first.** Per affected worktree: a dirty tree means a previous fix session died mid-fix (fix subagents commit their own work, so uncommitted changes are unfinished work) - `git reset --hard` to the newest fix checkpoint tag (HEAD if none) and let the finding re-run. Commits past the newest fix checkpoint tag with a clean tree: run the silent verify (step 7d); green - flip the matching finding(s) to `fixed` (review findings match by anchor-file overlap; QA findings by re-running their repro command green); red - reset to the tag.
    - **Checkpoint per fix:** before each fix subagent launches, `git tag -f workflow-checkpoint-<slug>-fix-<doc>-<n> HEAD` in its worktree (e.g. `-fix-review-3`, `-fix-qa-local-2`). Fixes touching the same worktree run sequentially; fixes in different worktrees may run in parallel.
    - **Fix subagent duties:** a QA finding's fix subagent gets the finding's repro command from the QA doc and must re-run it green; every fix subagent re-runs the relevant scoped tests, then commits its own work (same commit rules as phase subagents, step 7b).
    - After each fix, the orchestrator runs the silent verify (step 7d); green - flip that finding's Status to `fixed` in the source doc. The doc is the durable fix state; there is no `phases[]` entry for fixes. A crash mid-run resumes by re-collecting `open` findings. A fix subagent that discovers its finding is already addressed reports that without committing; the orchestrator flips the Status.
@@ -29,19 +29,20 @@ AFK invocation: start Claude Code with `--dangerously-skip-permissions`, run `/f
    - **Clean tree, no commits past the tag** - nothing happened: set `pending`.
    - Report: "Resuming: phases X committed, starting from the frontier."
 
-4. **Set up the working tree(s).** Determine each repo's default branch once: `git symbolic-ref refs/remotes/origin/HEAD` (fall back to `git remote show origin`); every diff and branch below uses `origin/<default>`. The feature branch is the slug.
+4. **Set up the working tree(s).** In `state.yaml` `repos`, the name `root` resolves to the project root (`git -C .`); its worktree naming below uses the project-root basename. Determine each repo's default branch once: `git symbolic-ref refs/remotes/origin/HEAD` (fall back to `git remote show origin`); every diff and branch below uses `origin/<default>`. A repo with no `origin` remote uses its local default branch (`main` or `master`, whichever exists) and skips the fetches - push later reports it has nothing to push there. The feature branch is the slug.
 
-   With config `worktrees: true`, per repo in `state.yaml` `repos`:
+   With config `worktrees: true`, per repo in `state.yaml` `repos` - **reuse first**: if state.yaml `worktrees` already records a path for the repo and `git -C <repo> worktree list` confirms it, use it as-is (crash recovery and findings-fix re-entry land here). Otherwise create it, passing an **absolute path** - a relative path would resolve against the repo and nest the worktree inside the checkout:
 
    ```bash
    git -C <repo> fetch origin
-   git -C <repo> worktree add <repo-dir>--<slug> -b <slug> origin/<default>
-   # crash recovery, branch already exists:  git -C <repo> worktree add <repo-dir>--<slug> <slug>
+   git -C <repo> worktree add <project-root>/.flow/worktrees/<name>--<slug> -b <slug> origin/<default>
+   # branch already exists (crash before the worktree was recorded):
+   git -C <repo> worktree add <project-root>/.flow/worktrees/<name>--<slug> <slug>
    ```
 
-   The worktree dir sits next to the repo dir. Copy untracked env files the app needs (`.env`, `.envrc`, `.env.local` and friends) from the main checkout into the worktree. Record the worktree paths in `state.yaml` `worktrees`. **Every subsequent command uses the worktree path, never the main repo path.** Install dependencies in each worktree per that repo's package manager.
+   `<name>` is the repo name (`backend`), or the project-root basename when the repo is `root`. Copy untracked env files the app needs (`.env`, `.envrc`, `.env.local` and friends) from the main checkout into the worktree - these are normally git-ignored; where they aren't, the step 7d clean-tree check excludes them. Record the worktree paths in `state.yaml` `worktrees`. **Every subsequent command uses the worktree path, never the main repo path.** Install dependencies in each worktree per that repo's package manager.
 
-   With `worktrees: false`: require a clean tree in the main checkout (dirty - stop and report; never stash the user's work silently), `git fetch origin && git checkout -b <slug> origin/<default>` (or check out the existing branch on resume), and record the checkout path in `state.yaml` `worktrees` so later steps have a single source for "where the branch lives". Warn once that the checkout should be left alone during the run.
+   With `worktrees: false`: require a clean tree in the main checkout (ignoring `.flow/`; dirty - stop and report; never stash the user's work silently), `git fetch origin && git checkout -b <slug> origin/<default>` (or check out the existing branch on resume), and record the checkout path in `state.yaml` `worktrees` so later steps have a single source for "where the branch lives". Warn once that the checkout should be left alone during the run.
 
 5. **Discover each repo's toolchain** from the working tree: `CLAUDE.md` (or `AGENTS.md`) at the repo root, plus the manifest (`package.json` scripts, `Makefile`, `pyproject.toml`, Gradle build files, `Cargo.toml`, ...). Extract the exact commands for: typecheck (or compile check), lint (and its autofix variant), scoped tests, single-test-file invocation, affected tests (`jest --findRelatedTests`, `nx affected --target=test`, or similar; fall back to scoped tests per changed module if none exists), plus any required runtime version and workspace structure. Prefer commands CLAUDE.md documents. A repo with no lint or typecheck step just has a shorter gate - note it, don't invent one.
 
@@ -55,14 +56,14 @@ AFK invocation: start Claude Code with `--dangerously-skip-permissions`, run `/f
 
    **a. Checkpoint and mark.** In the phase's working tree: `git tag -f workflow-checkpoint-<slug>-phase-N HEAD`. Set the phase `in-progress` in state.yaml.
 
-   **b. Construct the phase prompt** (structure below): phase content from the plan, relevant spec stories, the toolchain block, the plan header's test seams, simplicity discipline Part 1, and - only for phases with blockers - the implementation summaries from their blockers' phase logs. The prompt carries the commit rules: the config's commit convention with the phase's ticket ref (`tickets[n]` when state.yaml has a per-phase map, else the primary `ticket:`; no ref without one) and principle 10 (engineering language, never plan phase titles or workflow naming).
+   **b. Construct the phase prompt** (structure below): phase content from the plan, relevant spec stories, the toolchain block, the plan header's test seams, simplicity discipline Part 1, and - only for phases with blockers - the implementation summaries from their blockers' phase logs. The prompt carries the commit rules: the config's commit convention with the phase's ticket ref (`tickets[n]` when state.yaml has a per-phase map, else the primary `ticket:`; a `<slug>:` prefix without one, so a workflow's commits stay greppable) and principle 10 (engineering language, never plan phase titles or workflow naming).
 
    **c. Launch the subagent** via the Agent tool; pick the subagent type per the work.
 
    **d. Verify (silent).** Deterministic checks only, no build output into this context:
 
    ```bash
-   cd <working-tree-path> && git status --porcelain            # must be empty
+   cd <working-tree-path> && git status --porcelain            # must be empty (env files copied in step 4 excepted)
    git log --oneline workflow-checkpoint-<slug>-phase-N..HEAD   # must be non-empty
    (<typecheck> && <lint>) >/tmp/gate-<slug>-N.log 2>&1; echo $?  # must be 0
    ```

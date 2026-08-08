@@ -99,7 +99,7 @@ envs:                        # optional deployed environments for `/flow qa <nam
     notes: "deploy: git push staging main; logs: flyctl logs -a myapp"
 
 review:
-  reviewer: auto             # auto | claude | "<shell command>"
+  reviewer: auto             # auto (Codex MCP if available, else Claude) | claude | "<shell command>"
 ```
 
 Everything else flow creates lives under `.flow/<slug>/` - one self-contained folder per workflow, deleted in full at `/flow complete`.

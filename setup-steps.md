@@ -25,7 +25,7 @@ Ask only what detection couldn't settle; confirm the rest in one summary. Cover:
 4. **Worktrees** - recommend `true` (AFK implement can't wreck the main checkout, and parallel multi-repo phases need it); `false` is fine for a solo single-repo project where working on a branch in place is acceptable.
 5. **Running locally** - the commands, ports, and any DB/service dependencies needed to run the app for QA. Free text; stored verbatim for the QA step to follow.
 6. **Deployed environments** (optional) - name, base URL, and free-text notes per environment: how to deploy a branch there, how to read its logs.
-7. **Reviewer** - default `auto` (prefer a second-model MCP/CLI when available, else Claude). Only ask if detection found multiple options or the user raises it.
+7. **Reviewer** - default `auto` (Codex MCP when available, else Claude). If detection found a second-model CLI and the user wants it as the reviewer, write the concrete command as the value (e.g. `"codex exec"`) - `auto` never resolves to a CLI on its own. Only ask when detection found options or the user raises it.
 
 ## 3. Write the config
 
@@ -54,7 +54,7 @@ envs: []                     # optional deployed environments for `/flow qa <nam
 #   notes: "deploy: git push staging main; logs: flyctl logs -a myapp"
 
 review:
-  reviewer: auto             # auto | claude | "<shell command>" - auto prefers a second-model MCP/CLI when available
+  reviewer: auto             # auto (Codex MCP if available, else Claude) | claude | "<shell command>" for a second-model CLI
 ```
 
 Omit optional keys that have no content rather than writing empty placeholders (keep the commented examples for `envs`).

@@ -11,7 +11,7 @@ Status: charting | way-is-clear
 
 <domain; skills every session should consult; standing preferences for this effort>
 
-## Decisions so far
+## Decisions-so-far
 
 <!-- the index - one line per closed ticket: enough to judge relevance, then follow the link for the detail the ticket holds. Never restate the answer here. -->
 

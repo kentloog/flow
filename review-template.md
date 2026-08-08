@@ -12,7 +12,7 @@
 
 ## Review Pass 1
 
-**Reviewer:** Codex MCP | <CLI command> | Claude subagent (note why the fallback)
+**Reviewer:** Codex MCP (thread count if split per repo) | <CLI command> | Claude subagent (note why the fallback)
 **Re-review loops:** N
 
 Findings stay in their category's section. Do NOT merge or rerank findings across categories - a change can pass one category and fail another, and reporting them separately stops one category from masking the other.

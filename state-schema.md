@@ -15,7 +15,7 @@ slug: 42-token-refresh
 title: Token refresh for user sessions
 ticket: "#42"                  # primary ticket (or epic) in the tracker's ref format; null until known
 map: platform-observability    # wayfinder map slug this workflow was spawned from; omit otherwise
-repos: [backend, frontend]     # multi-repo: config repo names. Single-repo: [root]
+repos: [backend, frontend]     # multi-repo: config repo names. Single-repo: [root] (root = the project root, path ".")
 created: 2026-08-08
 updated: 2026-08-08T14:32:00
 current: implement             # the step that ran last or is running now
@@ -32,12 +32,12 @@ steps:                         # pending | in-progress | done | skipped
   ticket: done
   implement: in-progress
   review-code: pending
-  qa: skipped                  # optional steps start skipped; qa flips to done only when a pass ends PASS
+  qa: skipped                  # optional steps start skipped; a non-PASS qa pass flips it to in-progress, done only on PASS
   push: pending
   complete: pending
 
 worktrees:                     # written by implement; complete removes the worktrees, then deletes this file
-  backend: /home/user/projects/myapp/backend--42-token-refresh
+  backend: /home/user/projects/myapp/.flow/worktrees/backend--42-token-refresh
 
 phases:                        # structure written by plan; status owned by implement
   - n: 1
@@ -87,7 +87,7 @@ Omit empty optional keys (`map`, `next`, `blockers`, `worktrees`, `phases`, `rev
 | implement     | `steps.implement: in-progress` at start, `done` when every phase is `committed`; `worktrees`; per-phase status transitions. Findings-fix runs also flip each fixed finding's Status to `fixed` in the source review/QA doc after its commit - the doc is the durable fix state |
 | replan        | Rewrites `phases[]`; entries with `status: committed` stay byte-identical |
 | review        | `steps.review-code: done`; `reviews.code` |
-| qa            | Append a `qa[]` entry per pass (pass, env, date, verdict, open_findings); `steps.qa: done` when a pass ends PASS |
+| qa            | Append a `qa[]` entry per pass (pass, env, date, verdict, open_findings); `steps.qa: done` when a pass ends PASS, `in-progress` after a non-PASS pass |
 | push          | `steps.push: done`; `prs` |
 | complete      | Deletes the entire workflow folder, state.yaml included - a completed workflow leaves no local state (`steps.complete` never persists as `done`) |
 

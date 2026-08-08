@@ -9,8 +9,9 @@ Push feature branches and create pull requests. Separated from QA so PRs can go 
 - Phases not `committed` (`pending`, `in-progress`, or `failed`).
 - `review-code.md` missing, or its latest pass has `open` findings.
 - The latest `qa[]` entry's verdict is not `PASS` (or QA never ran).
+- state.yaml `blockers` entries whose conditions aren't verifiably met - they exist precisely to gate this step.
 
-**Per repo, from the working-tree path.** Skip repos with no commits ahead of `origin/<default>` and note them. For each remaining repo:
+**Per repo, from the working-tree path.** Skip repos with no commits ahead of `origin/<default>` and note them; a repo with no `origin` remote has nothing to push - report it and treat its branch as local-only (complete verifies it against the local default branch). For each remaining repo:
 
 - **Push the branch whenever it has commits the remote lacks** (`git push -u origin <slug>`) - including re-pushes after QA/review fix commits; an existing PR never suppresses the push.
 - **Create the PR** when the remote supports it and the tooling exists (GitHub remote + `gh`: check for an existing open PR for the branch first - if one exists, record its URL and skip only the creation, since a previous push run may have died before writing state; otherwise `gh pr create`). Title per the project's commit convention + engineering language (principle 10 - never internal workflow naming); description summarizes what was built (from the spec) in engineering language, links the primary ticket per the tracker's convention (`Closes #42` on GitHub), and lists per-phase tickets when state.yaml has a `tickets:` map.
@@ -22,7 +23,7 @@ Push feature branches and create pull requests. Separated from QA so PRs can go 
 
 ## /flow complete <slug>
 
-1. **Verify shipped:** for each `prs` entry with a PR URL, check the merge state (`gh pr view --json state,mergedAt` on GitHub). For branch-only entries, verify the branch is merged into the default branch (`git branch -r --merged origin/<default>` contains it, or `git log origin/<default> --oneline | grep` a known commit). All merged - proceed. Otherwise report what's still open and stop unless the user explicitly overrides.
+1. **Verify shipped:** `git fetch origin` first per repo (stale local refs report freshly-merged PRs as open), then for each `prs` entry with a PR URL check the merge state (`gh pr view --json state,mergedAt` on GitHub). For branch-only entries, verify the branch is merged into the default branch (`git branch -r --merged origin/<default>` contains it - or the local default branch for remote-less repos). All merged - proceed. Otherwise report what's still open and stop unless the user explicitly overrides.
 
 2. **Graduate lessons.** The workflow folder is about to be deleted, so anything with lasting value must move to a durable home now. Mine the run's artifacts (phase logs, review-code.md, QA docs, journal.md if present) for what went wrong, took longer than expected, or would trip the next agent, then route each candidate by audience:
 
@@ -37,7 +38,7 @@ Push feature branches and create pull requests. Separated from QA so PRs can go 
 3. **Clean up:**
    - Delete leftover checkpoint tags in each repo: `git tag -l "workflow-checkpoint-<slug>-*" | xargs -r git tag -d`
    - Delete the prototype branch(es) if `state.yaml` records `prototype_branches`.
-   - Remove worktrees per entry in `state.yaml` `worktrees`: `git worktree remove <path>` (skip when `worktrees: false` recorded the main checkout - just check out the default branch there and delete the local feature branch).
+   - Remove worktrees per entry in `state.yaml` `worktrees`: `git -C <repo> worktree remove <path>` (`--force` if the tree is dirty - QA and dev-server artifacts make that common), then delete the merged local feature branch: `git -C <repo> branch -d <slug>`. When `worktrees: false` recorded the main checkout instead: check out the default branch there, then delete the feature branch the same way.
 
 4. **Delete the workflow folder** - the whole of `.flow/<slug>/`, state.yaml included. Once shipped, the durable truth is the merged code, the PRs, and the ticket; a kept spec describes the feature as designed at one moment and goes confidently stale. A completed workflow leaves no local state and disappears from `/flow list` - by design.
 

@@ -20,7 +20,7 @@ Method by feature type: API - curl; UI - browser tools if a browser MCP is avail
 
 4. **Write the report** to `.flow/<slug>/qa-local.md` per `qa-template.md` (this skill's directory). First run creates the file; later runs append `## QA Pass N`. Open findings from the previous pass carry forward.
 
-5. **Stop what you started** (background processes), then **update state.yaml** (`qa[]` entry: pass, env `local`, date, verdict, open findings count) and report:
+5. **Stop what you started** (background processes), then **update state.yaml** (`qa[]` entry: pass, env `local`, date, verdict, open findings count; `steps.qa`: `done` on PASS, `in-progress` otherwise) and report:
    - **PASS**: `Next: /flow push <slug>`
    - **NEEDS_CHANGES / FAIL**: list findings. Fix route: `/flow implement <slug>` re-enters with the latest pass's open findings as targeted fix subagents; then re-run QA.
 
@@ -32,6 +32,6 @@ Named in config `envs`; each entry carries the base URL and free-text notes (how
 
 Execute scenarios as locally, but: curl against the environment's URL, browser tools on the public URLs, and logs per the environment's notes (platform CLI, dashboard, whatever the notes name). DB only if the user has provided access for this task; ask before querying - otherwise verify data via API responses. On failures, capture whatever correlation the platform offers (request IDs, trace IDs from response headers or logs) and record it with the finding.
 
-**Write the report** to `qa-<env>.md` per qa-template.md (`## QA Pass N` appends on re-runs; include request/trace IDs in findings). **Update state.yaml** (`qa[]` entry with env, date, verdict, open findings) and report:
+**Write the report** to `qa-<env>.md` per qa-template.md (`## QA Pass N` appends on re-runs; include request/trace IDs in findings). **Update state.yaml** (`qa[]` entry with env, date, verdict, open findings; `steps.qa`: `done` on PASS, `in-progress` otherwise) and report:
 - **PASS**: `Next: /flow complete <slug>`
 - **NEEDS_CHANGES / FAIL**: findings with their correlation IDs. Fix route: `/flow implement <slug>` re-entry, then redeploy and re-run.

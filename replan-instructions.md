@@ -14,7 +14,7 @@ Adjust the plan after the spec changed mid-implementation. **Committed phases ar
 
 1. **Read** the updated `spec.md`, `plan.md`, and `state.yaml` from the slug folder, plus the phase logs (`logs/phase-N.md`) of committed phases - their summaries stand in for the committed code; do NOT re-explore the codebase (the committed code IS the current state, and re-exploring burns context on already-understood code).
 
-2. **If `[phase]` names a committed phase**, reject:
+2. **Scope from `[phase]`.** Naming a `pending` or `failed` phase scopes regeneration to that phase (plus any pending phases the change invalidates - e.g. their `blocked_by` edges or content reference what changed); omitting it regenerates all replannable phases. If `[phase]` names a committed phase, reject:
    > Phase N is already committed - I'll add corrective phases at the end instead. Proceed? (y/n)
 
 3. **Diff the spec against the plan's assumptions:** new requirements uncovered, changed requirements affecting committed phases, removed requirements making pending phases unnecessary.
