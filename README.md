@@ -33,13 +33,21 @@ Most agent-assisted feature work fails in the same places: decisions that were n
 
 ## Install
 
-Clone into your Claude Code skills directory:
+Clone into your Claude Code skills directory (all projects):
 
 ```bash
 git clone https://github.com/kentloog/flow.git ~/.claude/skills/flow
 ```
 
-Or per-project: clone into `<project>/.claude/skills/flow` to scope it to one repo.
+Or scope it to a single project by cloning into `<project>/.claude/skills/flow` instead.
+
+Skills are discovered when a session starts, so open a **new** Claude Code session afterwards and type `/flow` - it should appear in the command suggestions. If you already have a skill named `flow`, clone to a different directory name (the directory name is the skill name; adjust the `name:` field in `SKILL.md` to match).
+
+To update later:
+
+```bash
+git -C ~/.claude/skills/flow pull
+```
 
 ## Quick start
 
