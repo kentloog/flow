@@ -77,7 +77,7 @@ Read `state.yaml` first on every subcommand - except `setup`, `idea` (which crea
 | `gh` CLI | push, complete | PRs and merge checks when the remote is GitHub; otherwise push branches and verify merges with plain git |
 | `git worktree` | code-touching steps, when config `worktrees: true` | Worktrees live under `.flow/worktrees/` (see the Paths table) - always created with absolute paths |
 | Second-model reviewer | review | Codex MCP (`mcp__codex__codex` + `-reply`) when available, else a CLI named in config, else a Claude subagent - the adversarial validation layer runs regardless. No Workflow orchestration tool anywhere: its resume is same-session only, and implement needs state.yaml + checkpoint tags to survive session death |
-| Browser tools | qa (UI features) | Any available browser MCP (e.g. chrome-devtools, Claude Code's built-in browser). Curl-level QA when none is available |
+| Browser tools | qa (UI features) | Whatever the session has - Claude Code's built-in browser (no setup) or a browser MCP (e.g. chrome-devtools, which adds perf traces and Lighthouse). The agent picks; curl-level QA only when neither exists |
 
 ### Worktrees
 

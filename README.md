@@ -25,7 +25,7 @@ Most agent-assisted feature work fails in the same places: decisions that were n
   - `gh` CLI - PR creation and merge verification on GitHub remotes
   - An issue tracker - GitHub Issues, Jira, Linear, or a plain markdown backlog file (configured per project)
   - A second-model reviewer - the [Codex MCP server](https://developers.openai.com/codex/mcp/) or any CLI (`codex exec`, `gemini`, ...); flow falls back to a Claude-only review with the same adversarial validation
-  - A browser MCP (e.g. chrome-devtools) - UI QA with screenshots
+  - Browser tools - UI QA with screenshots; Claude Code's built-in browser needs no setup, and a browser MCP (e.g. chrome-devtools) adds performance traces and Lighthouse on top
 
 ## Install
 

@@ -8,7 +8,7 @@ Read `spec.md`, `plan.md`, and `state.yaml` from the slug folder, plus `run` and
 
 **Findings must be reproducible:** every finding recorded in the QA doc carries a repro command (curl line, UI path, or SQL query) - the fix subagent re-runs it green before the finding flips to `fixed`.
 
-Method by feature type: API - curl; UI - browser tools if a browser MCP is available (screenshot key states), otherwise curl the rendered routes and verify markup; full-stack - API first, then UI reflects the data; migration - schema + integrity queries via the project's DB client; background job - trigger + logs + DB check; CLI - run the binary against fixture input.
+Method by feature type: API - curl; UI - whatever browser tooling the session has, built-in browser or a browser MCP, agent's choice (screenshot key states), dropping to curl on the rendered routes and verifying markup only when no browser tool exists at all; full-stack - API first, then UI reflects the data; migration - schema + integrity queries via the project's DB client; background job - trigger + logs + DB check; CLI - run the binary against fixture input.
 
 ## Local (default)
 
