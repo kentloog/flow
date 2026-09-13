@@ -1,6 +1,6 @@
 # Grill Discipline
 
-A relentless interview to sharpen a plan, decision, or idea - grill the user about every aspect of it until a shared understanding is reached. Applied by `idea` (the main grilling session), `spec` (residual open decisions only), and wayfinder grilling tickets; also applies whenever the user wants to stress-test their thinking or uses a "grill" trigger phrase ("grill me"). Sourced from Matt Pocock's grilling skill.
+An interview to sharpen a plan, decision, or idea - put every decision that changes what gets built to the user until a shared understanding is reached. Applied by `idea` (the main grilling session), `spec` (residual open decisions only), and wayfinder grilling tickets; also applies whenever the user wants to stress-test their thinking or uses a "grill" trigger phrase ("grill me"). Sourced from Matt Pocock's grilling skill.
 
 ## The principle
 
@@ -8,12 +8,18 @@ Most miscommunication between human, AI, and codebase comes from missing shared 
 
 ## Interview mechanics
 
-- Interview the user relentlessly about every aspect until a shared understanding is reached. Walk down each branch of the decision tree, resolving dependencies between decisions one by one.
-- Ask questions one at a time, waiting for feedback on each before continuing. Asking multiple questions at once is bewildering.
+- Map consequential decisions and their dependencies. Ask the ready frontier: a short numbered round of independent questions, each with a recommendation. Ask dependent questions in the next round after their prerequisites are answered. Use one question when dependency or complexity calls for it.
+- Wait for the human's answers; never simulate them. Research factual unknowns yourself while continuing questions that do not depend on those facts.
 - For each question, provide your recommended answer - the user can accept with a word or override.
 - If a fact can be found by exploring the environment (filesystem, code, tools), look it up rather than asking. The decisions, though, are the user's - put each one to them and wait for the answer. Never answer your own questions.
 - Summarize decisions periodically to confirm alignment.
 - Record each resolved decision in the run's decision record the moment it lands, never batched to the end. During ideation that is idea.md's **Settled Decisions**; during the spec's residual interview it is the spec itself.
+
+## Decision boundary
+
+Ask the user about choices that change the product outcome, a public contract, data semantics, security posture, operational behavior, architectural shape, or a costly-to-reverse trade-off. Also ask when the user wants control of a choice.
+
+Leave reversible implementation mechanics to the implementation owner: file placement, helper shape, refactoring order, test-double style, and command sequencing. Escalate when a local-looking choice exposes a material trade-off or changes an approved contract.
 
 ## Discuss concrete scenarios (proactive)
 

@@ -1,54 +1,32 @@
 # QA: <title>
 
-**Date:** YYYY-MM-DD
 **Slug:** <slug>
-**Ticket:** #42 / PROJ-123
-**Environment:** local | <env name from config>
-**Branch:** branch-name
-
-## Scope
-
-What was implemented. Which plan phases this QA pass covers.
-
-## Test Scenarios
-
-### <Scenario 1: Happy path>
-
-**Steps:**
-1. ...
-
-**Expected result:** ...
-
-### <Scenario 2: Edge case>
-
-...
+**Ticket:** <reference, if applicable>
+**Environment:** local | <configured environment>
 
 ## QA Pass 1
 
-### Services / Environment Validated
+**Date:** YYYY-MM-DD
+**Tested revisions:** <repo: SHA; deployed version evidence when applicable>
+**Approved spec digest:** <SHA256>
+**Services:** <start commands, process IDs owned by this pass, readiness and code-version evidence>
 
-| Service | Mode/Env | Status |
-|---------|----------|--------|
+### Results
 
-### Test Results
-
-| # | Scenario | Method | Result | Details |
-|---|----------|--------|--------|---------|
-| 1 | ... | API / UI / DB / Logs | PASS/FAIL | ... |
+| Criterion / scenario | Method and reproduction steps | Expected | Observed | Result | Evidence |
+|----------------------|-------------------------------|----------|----------|--------|----------|
+| ... | API / browser / DB / CLI / job | ... | ... | PASS / FAIL / UNVERIFIED | log/screenshot/report path |
 
 ### Findings
 
-| # | Severity | Description | Repro command | Plan phase to fix | Status |
-|---|----------|-------------|---------------|-------------------|--------|
-| 1 | ... | ... | curl / UI path / SQL | ... | open |
+| ID | Severity | Expected vs actual / impact | Repro command or UI steps | Plan phase to fix | Status | Resolution evidence |
+|----|----------|-----------------------------|--------------------------|-------------------|--------|---------------------|
+| Q1 | ... | ... | ... | ... | open | ... |
 
-Status values: `open`, `fixed`, `wontfix`. The repro command is mandatory - the fix subagent re-runs it green before the finding flips to `fixed`.
+Status: `open`, `fixed`, `wontfix`. Retain IDs across passes and qualify by environment when passing to repairs. Fixed requires reproduction evidence; wontfix links an accepted decision. Carry unresolved findings into every new pass.
 
 ### Verdict
 
-**PASS** / **NEEDS_CHANGES** / **FAIL**
+**PASS** / **NEEDS_CHANGES** / **BLOCKED** / **FAIL**
 
-<!-- Subsequent passes: copy this section as "## QA Pass 2", etc.
-     Previous pass findings with status "open" carry forward.
-     Only the LATEST pass's "open" findings feed /flow implement fix generation,
-     which flips them to "fixed" as fixes commit. -->
+Unverified required criteria, blockers, and the reason any unaffected evidence was reused. Include restart/demo instructions and cleanup of processes owned by this pass. Append subsequent passes; preserve historical verdicts.

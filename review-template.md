@@ -1,40 +1,38 @@
 # Review: <title>
 
-**Date:** YYYY-MM-DD
 **Slug:** <slug>
-**Ticket:** #42 / PROJ-123 (if applicable)
-**Target:** diff origin/<default-branch>...HEAD per repo
-
-<!-- Repeated reviews append a new "## Review Pass N" section; only the LATEST pass's
-     "open" findings feed /flow implement fix generation, which flips them to
-     "fixed" as fixes commit. Number findings sequentially across categories within a
-     pass so every finding has a stable ID. -->
+**Ticket:** <reference, if applicable>
 
 ## Review Pass 1
 
-**Reviewer:** Codex MCP (thread count if split per repo) | <CLI command> | Claude subagent (note why the fallback)
-**Re-review loops:** N
+**Date:** YYYY-MM-DD
+**Implementation / validation family:** <codex / claude / other; note mixed authorship>
+**Reviewer:** <actual family, bridge/CLI and session ID; note independence limits>
+**Scope:** full | partial (list unfinished phases for a partial review)
+**Base commits:** <repo: SHA>
+**Reviewed revisions:** <repo: SHA>
+**Approved spec digest:** <SHA256>
 
-Findings stay in their category's section. Do NOT merge or rerank findings across categories - a change can pass one category and fail another, and reporting them separately stops one category from masking the other.
+### Findings
 
-### <Category: spec-fidelity | simplicity | conventions | bug | test | cross-repo>
+| ID | Priority | Category | Anchor / requirement | Trigger, impact and evidence | Repair direction | Status |
+|----|----------|----------|----------------------|------------------------------|------------------|--------|
+| R1 | ... | bug / spec / simplicity / conventions / test / integration | ... | ... | ... | open |
 
-| # | Anchor | Tag | Finding | Status |
-|---|--------|-----|---------|--------|
-| 1 | file:line | yagni: | ... | open |
+Status: `open`, `fixed`, `wontfix`. Retain IDs across passes; number new findings above prior IDs. A fixed entry links its commit and verification. A wontfix entry links the accepted decision.
 
-Or: clean.
+### Rejected findings
 
-Status values: `open`, `fixed`, `wontfix`
+Candidate and evidence explaining rejection. Preserve decision history on later passes.
 
-### Killed in validation
+### Verification and actions
 
-- Finding and the reason it died (bad anchor, pre-existing code, accepted risk, scope inflation, unreachable claim disproven). Kept for transparency, not action; reported back to the reviewer so it isn't re-raised.
+Commands/results and report paths for repairs. Explain the scope of re-review and any reused unaffected evidence.
+
+### Reviewer follow-up
+
+Link the reply/output for dispositions, fix commits and verification evidence sent back to the reviewer. Record its reassessment and any remaining evidence-based disagreement. For an initial clean pass, state that no follow-up was needed.
 
 ### Verdict
 
-Per category: findings count and the worst issue within that category. No single winner across categories. Simplicity category ends with `net: -N lines possible` or `lean already`.
-
-### Actions Taken
-
-- What was updated (fix commits) in response, per re-review loop.
+**clean** / **findings-open**. Summarize remaining issues by impact. Append a new pass before repairs; carry unresolved findings forward.

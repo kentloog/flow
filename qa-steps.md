@@ -1,37 +1,30 @@
-# QA Steps: qa
+# QA
 
-## /flow qa <slug> [env]
+Verify the spec's acceptance criteria against working software. `flow qa <slug> [env]` runs one pass and reports it; the autonomous execution loop calls the same procedure and handles repairs itself.
 
-QA the implementation against the spec's acceptance criteria. Default environment is **local**; `<env>` names an entry in config `envs` for a deployed environment.
+Read state, spec, relevant plan criteria and config `run` / `envs`. Resolve working trees from state. Record the approved spec digest and exact repo revisions. Run on stable code after writers finish.
 
-Read `spec.md`, `plan.md`, and `state.yaml` from the slug folder, plus `run` and `envs` from `.flow/config.yml`. Extract: repos with code changes, acceptance criteria to test, services involved. Working-tree paths come from state.yaml.
+## Environment and methods
 
-**Findings must be reproducible:** every finding recorded in the QA doc carries a repro command (curl line, UI path, or SQL query) - the fix subagent re-runs it green before the finding flips to `fixed`.
+For local QA, start required services from the recorded working trees using config notes or repo instructions. Keep process IDs and logs in the report; verify service readiness and that the running app uses the intended code, including container mounts/build inputs. Diagnose ordinary setup failures and retry within the execution budget. A missing login, inaccessible service or unknown deployed revision is an explicit verification gap.
 
-Method by feature type: API - curl; UI - whatever browser tooling the session has, built-in browser or a browser MCP, agent's choice (screenshot key states), dropping to curl on the rendered routes and verifying markup only when no browser tool exists at all; full-stack - API first, then UI reflects the data; migration - schema + integrity queries via the project's DB client; background job - trigger + logs + DB check; CLI - run the binary against fixture input.
+Choose the method that proves the behavior: API requests for APIs, browser interactions and screenshots for UI states, schema/integrity queries for migrations, trigger and observable effects for jobs, fixture input/output for CLIs. Use the browser capability exposed by the harness. HTTP/markup inspection can supplement UI QA but cannot prove interaction, layout or browser behavior. If the required method is unavailable, mark those criteria unverified and the pass BLOCKED.
 
-## Local (default)
+For a named environment, verify the deployed revision through a version endpoint, deployment record or equivalent evidence. Use supplied credentials and authorized access. Environment config describes how to deploy; it does not by itself authorize deployment. Capture request/trace IDs when available. A local fix does not resolve deployed QA until the fixed revision is deployed and retested there.
 
-1. **Start the app yourself where non-interactively possible**, from the working tree so the feature branch is what gets tested, following config `run.notes` - falling back to the repo's README, package scripts, or Makefile when notes are missing. Background long-running processes with output to a log file. Ask the user to run only the commands that genuinely need interactivity. Poll a health/root endpoint until up; on failure, read the process log, fix what's fixable (port in use, missing dependency, un-run migration) and retry once before asking the user.
+## Report and return
 
-2. **Validate the setup** before testing: the served code really is the feature branch (a version endpoint if one exists, else confirm the process was started from the working-tree path), and declared dependencies (DB, queues) are up.
+Use `./qa-template.md` to create `qa-local.md` or `qa-<env>.md`; append a pass on later runs. Record each criterion's observed result, method and evidence path, including unverified criteria. Findings need reproducible commands or UI steps with expected/actual results. Carry unresolved findings from the previous pass with their IDs; close them only with reproduction evidence or a linked accepted decision.
 
-3. **Execute test scenarios** per acceptance criterion, logging results: API via curl (status codes, response shape, error cases); UI via browser tools; DB via the project's client.
+Verdicts:
 
-4. **Write the report** to `.flow/<slug>/qa-local.md` per `qa-template.md` (this skill's directory). First run creates the file; later runs append `## QA Pass N`. Open findings from the previous pass carry forward.
+- **PASS**: all required criteria verified for the stated revisions, with no unresolved required findings.
+- **NEEDS_CHANGES**: verified product defects needing repair.
+- **BLOCKED**: required criteria cannot be verified with available environment, access or tools. Record known defects too.
+- **FAIL**: execution failed before a reliable assessment; include diagnostic evidence.
 
-5. **Stop what you started** (background processes), then **update state.yaml** (`qa[]` entry: pass, env `local`, date, verdict, open findings count; `steps.qa`: `done` on PASS, `in-progress` otherwise) and report:
-   - **PASS**: `Next: /flow push <slug>`
-   - **NEEDS_CHANGES / FAIL**: list findings. Fix route: `/flow implement <slug>` re-enters with the latest pass's open findings as targeted fix subagents; then re-run QA.
+Persist the report. A delegated QA worker returns the report and leaves shared state to the coordinator; in a standalone pass, the main agent performs both roles. Stop only services this pass started; leave reproduction instructions so human acceptance can restart them.
 
-## Deployed environments
+The coordinator appends `qa[]` with pass, env, date, verdict, open count, revisions, spec digest and report path. It sets `steps.qa: done` only on PASS, otherwise `in-progress`. A non-PASS result invalidates any prior execution readiness; record running while the coordinator can repair, or blocked when no authorized progress remains. Preserve previous pass verdicts as historical evidence.
 
-Named in config `envs`; each entry carries the base URL and free-text notes (how to deploy a branch there, how to read logs). Less direct access than local: no processes to start, no direct DB unless the user provides access.
-
-**Prerequisites:** the feature branch is deployed to the target environment - verify via a version endpoint when one exists, ask the user otherwise (the env's notes say how to deploy). Any auth the environment needs (tokens, login) comes from the user - never guess credentials.
-
-Execute scenarios as locally, but: curl against the environment's URL, browser tools on the public URLs, and logs per the environment's notes (platform CLI, dashboard, whatever the notes name). DB only if the user has provided access for this task; ask before querying - otherwise verify data via API responses. On failures, capture whatever correlation the platform offers (request IDs, trace IDs from response headers or logs) and record it with the finding.
-
-**Write the report** to `qa-<env>.md` per qa-template.md (`## QA Pass N` appends on re-runs; include request/trace IDs in findings). **Update state.yaml** (`qa[]` entry with env, date, verdict, open findings; `steps.qa`: `done` on PASS, `in-progress` otherwise) and report:
-- **PASS**: `Next: /flow complete <slug>`
-- **NEEDS_CHANGES / FAIL**: findings with their correlation IDs. Fix route: `/flow implement <slug>` re-entry, then redeploy and re-run.
+Return the verdict and evidence paths to the coordinator when called within execution; it proceeds without a phase-transition question. A standalone pass reports the result and appropriate next action: local PASS is ready for human acceptance if all phases are committed and a clean full review meeting the configured reviewer requirement is also current; code defects resume via `flow implement`; deployed fixes await authorized redeployment and another environment pass.

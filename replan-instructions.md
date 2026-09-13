@@ -1,34 +1,13 @@
-# /flow replan <slug> [phase] - Detailed Instructions
+# Replan remaining work
 
-Adjust the plan after the spec changed mid-implementation. **Committed phases are immutable** - replan never rewrites or reverts completed work; corrective phases are appended instead.
+Read state, the current spec and plan, and relevant phase reports. Reconcile active work using `./execution-steps.md` before changing its assignment. An in-progress phase may still have a live worker. Preserve unfinished changes and inspect source when a report does not settle a fact.
 
-## Rules
+For a spec-digest mismatch, compare the current spec with `logs/approved-spec.md`, verifying that the snapshot matches the recorded `approved_spec`. If only spelling or formatting changed without changing meaning, record the comparison and old/new digests, save the updated snapshot, and update `approved_spec`. Preserve the plan and counters. Carry existing review/QA evidence forward in new pass records with the new digest and the comparison as its reason, retaining its tested revisions and review scope; unchanged code and requirements need no test rerun or new approval. A cosmetic edit never makes stale code evidence current. Keep verdicts, unresolved findings and blockers intact, then return to the caller. If a matching approved version cannot be recovered, use the normal reconciliation below rather than assuming the change is cosmetic.
 
-- A phase with `status: committed` in state.yaml stays. Its code is fact. Committed phases are a SET, not a prefix - frontier scheduling commits out of order (1 and 3 can be committed while 2 is pending).
-- Phases still `pending` can be regenerated.
-- A phase with `status: failed` is regenerable like `pending`, with user confirmation - a failure caused by a bad plan is exactly what replan exists for. Its uncommitted working-tree changes are handled by the next implement run (reset to the checkpoint tag before the fresh attempt).
-- A phase with `status: in-progress` means an implement session died mid-phase. Do not replan over it: run `/flow implement <slug>` first so its recovery logic settles the phase to `committed` or `pending`, then replan.
-- To change committed work, append a corrective phase (e.g. "Refactor token storage to Redis") that explicitly references which earlier phase it corrects and why.
+Keep committed phase IDs, content and history intact. Append corrective phases for changes to completed behavior. Pending phases may be regrouped or refined within approved scope; preserve stable IDs for the same deliverables, add fresh IDs for new ones, and update affected dependencies and ticket references. Keep a brief change reason in plan.md. Check that every approved criterion is still covered and the graph has no missing IDs or cycles.
 
-## Steps
+Changes to pending execution order, batching or implementation mechanics can proceed autonomously. A changed product outcome, public contract, accepted trade-off or acceptance criterion needs the human's decision unless already authorized. For approved material spec changes, save the new approved snapshot, update `approved_spec` to its new SHA256 and invalidate affected readiness/review/QA evidence. Do not re-ask decisions settled in the request.
 
-1. **Read** the updated `spec.md`, `plan.md`, and `state.yaml` from the slug folder, plus the phase logs (`logs/phase-N.md`) of committed phases - their summaries stand in for the committed code; do NOT re-explore the codebase (the committed code IS the current state, and re-exploring burns context on already-understood code).
+A failed phase may be revised after diagnosis, but a new session or replan does not automatically grant more retries. Preserve attempt history and record the changed diagnosis or authorization for any additional budget.
 
-2. **Scope from `[phase]`.** Naming a `pending` or `failed` phase scopes regeneration to that phase (plus any pending phases the change invalidates - e.g. their `blocked_by` edges or content reference what changed); omitting it regenerates all replannable phases. If `[phase]` names a committed phase, reject:
-   > Phase N is already committed - I'll add corrective phases at the end instead. Proceed? (y/n)
-
-3. **Diff the spec against the plan's assumptions:** new requirements uncovered, changed requirements affecting committed phases, removed requirements making pending phases unnecessary.
-
-4. **Regenerate the replannable phases** per the slicing rules in `plan-steps.md` step 4 (tracer-bullet vertical slices, repo per phase, context-window sizing, expand-contract for wide refactors), under these constraints:
-   - Committed phase numbers and content are immutable; never touch them in plan.md or state.yaml.
-   - Brand-new phases take fresh numbers above the highest existing one; blocking edges may reference committed phases.
-   - Corrective phases for committed work are appended at the end with `blocked_by` edges on the phases they correct.
-   - Each regenerated phase gets a full plan-template phase section (What to build, Acceptance criteria with seams, User stories).
-
-   Merge into plan.md: committed sections unchanged, regenerated sections replaced, corrective sections appended.
-
-5. **Update state.yaml `phases[]`**: committed entries byte-identical, new/regenerated entries `pending` with fresh `blocked_by` edges. Quiz the user on the new edges as in the plan step (granularity, edges, merge/split) and iterate until approved.
-
-6. **Report:**
-   > Replanned. Committed phases (<numbers>) unchanged. [Regenerated / appended corrective] phases: ... New total: P.
-   > Continue: `/flow implement <slug>`
+Write revised content to plan.md and pending phase metadata to state. Keep committed entries unchanged. Set affected steps pending and execution running (or blocked for a real unresolved decision); give the coordinator the next ready work. During an autonomous run, return control to it. Standalone replan reports changes and the resume invocation `flow implement <slug>`.

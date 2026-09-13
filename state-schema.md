@@ -1,98 +1,119 @@
-# state.yaml Contract
+# Workflow state
 
-Single source of truth for a workflow's state. Path: `<project-root>/.flow/<slug>/state.yaml`. Created by `idea`, read first and updated by every subsequent subcommand. On every write: bump `updated` and set `current` to the subcommand that is running. (Project-level configuration lives in `.flow/config.yml`, not here - state.yaml is per-workflow.)
-
-**Schema keys only.** state.yaml holds the keys below and nothing else - narrative prose, deploy records, and session notes go to `journal.md` in the slug folder (which no subcommand reads by default). Two sanctioned homes for operational state the next session must see: `blockers:` (short strings - interlocks, cutoffs, do-not-merge-before conditions) and `next:` (one line). Every generated state.yaml starts with the header comment:
-
-```yaml
-# schema keys only (see state-schema.md); narrative goes to journal.md
-```
+`<project-root>/.flow/<slug>/state.yaml` is a compact index of durable work. The coordinator alone writes it. Write a complete valid file atomically, preserving unrelated fields; bump `updated` and set `current` on updates. Reports hold details; active work, blockers and the next action must be recoverable without conversation history.
 
 ## Schema
 
 ```yaml
-slug: 42-token-refresh
+slug: token-refresh
 title: Token refresh for user sessions
-ticket: "#42"                  # primary ticket (or epic) in the tracker's ref format; null until known
-map: platform-observability    # wayfinder map slug this workflow was spawned from; omit otherwise
-repos: [backend, frontend]     # multi-repo: config repo names. Single-repo: [root] (root = the project root, path ".")
-created: 2026-08-08
-updated: 2026-08-08T14:32:00
-current: implement             # the step that ran last or is running now
-next: run /flow qa after the lib bump lands        # optional, one line
-blockers:                      # optional, short strings only
-  - "Do not push frontend before backend's API change is merged"
-
-steps:                         # pending | in-progress | done | skipped
+ticket: null                  # tracker reference; optional map/tickets below
+repos: [root]                 # root = project root; otherwise config repo names
+created: 2026-09-13
+updated: 2026-09-13T14:32:00Z
+current: implement
+next: Continue ready phases
+blockers: []                  # short actionable strings; omit when empty
+approved_spec: "<sha256 of approved spec.md bytes>"
+steps:                        # pending | in-progress | done | skipped
   idea: done
-  research: skipped            # optional steps: research, prototype, ticket, qa
+  research: skipped           # research, prototype and ticket are optional
   prototype: skipped
   spec: done
   plan: done
-  ticket: done
+  ticket: skipped
   implement: in-progress
   review-code: pending
-  qa: skipped                  # optional steps start skipped; a non-PASS qa pass flips it to in-progress, done only on PASS
+  qa: pending                 # local QA is required for autonomous readiness
   push: pending
   complete: pending
-
-worktrees:                     # written by implement; complete removes the worktrees, then deletes this file
-  backend: /home/user/projects/myapp/.flow/worktrees/backend--42-token-refresh
-
-phases:                        # structure written by plan; status owned by implement
+worktrees:
+  root: /project/.flow/worktrees/project--token-refresh
+bases:
+  root: "<base commit SHA>"  # frozen when feature branch starts
+phases:
   - n: 1
-    title: Schema and session repository
-    repo: backend
-    blocked_by: []             # phase numbers that must be committed first
-    status: committed          # pending | in-progress | committed | failed
-  - n: 2
-    title: Token refresh endpoint and UI wiring
-    repo: backend
-    blocked_by: [1]
-    status: pending
-
+    title: Refresh an expired session
+    repo: root
+    blocked_by: []            # phase IDs; all must be committed before dispatch
+    status: in-progress      # pending | in-progress | committed | failed
+execution:
+  status: running            # running | blocked | ready
+  implementation_family: codex  # codex | claude | other; lead for current implementation/repairs
+  reviewer:                 # optional; persists after active call entries are cleared
+    provider: claude
+    transport: "<bridge tool or CLI>"
+    cwd: /project/.flow/worktrees/project--token-refresh
+    session_id: "<provider session ID>"  # null until returned; record host if remote
+  attempts:                  # durable attempt counts, not reset on compaction
+    phase-1: 1               # initial attempt + at most two repairs; also applies to integration/setup IDs
+    repair: 0                # review/QA repair rounds; at most three by default
+  active:
+    - id: phase-1
+      kind: phase            # phase | fix | review | qa | integration
+      phases: [1]            # optional; IDs covered by this work unit
+      finding_ids: []         # optional; qualified IDs, e.g. review-code:R1
+      repo: root             # writer's repo; omit for read-only multi-repo work
+      handle: null               # native handle when delegated; null for direct work
+      checkpoint: "<HEAD before work>"
+      report: logs/phase-1.md
 reviews:
-  code: { passes: 2, verdict: clean }        # clean | findings-open
-
-qa:                            # appended per QA pass
+  code:
+    passes: 1
+    scope: full              # full | partial; only full can satisfy readiness
+    implementation_family: codex
+    reviewer_family: claude  # actual provenance; current/unknown is not cross-model proof
+    verdict: clean           # clean | findings-open
+    revisions: {root: "<reviewed SHA>"}
+    spec_digest: "<approved spec SHA256>"
+    report: review-code.md
+qa:
   - pass: 1
-    env: local                 # local | <env name from config>
-    date: 2026-08-09
-    verdict: NEEDS_CHANGES     # PASS | NEEDS_CHANGES | FAIL
-    open_findings: 2
-
-prs:                           # written by push: PR/MR URL, or "branch pushed: <branch>" when no PR flow exists
-  backend: https://github.com/user/myapp/pull/57
-
-tickets:                       # only for one-ticket-per-phase work; phase n -> ticket ref
-  1: "#43"
-  2: "#44"
-
-prototype_branches:            # only if prototype code was parked; complete deletes the branches
-  backend: proto/42-token-refresh
+    env: local
+    date: 2026-09-13
+    verdict: PASS            # PASS | NEEDS_CHANGES | BLOCKED | FAIL
+    open_findings: 0
+    revisions: {root: "<tested SHA>"}
+    spec_digest: "<approved spec SHA256>"
+    report: qa-local.md
+prs:
+  root: https://github.com/example/project/pull/42
+map: platform-observability   # optional parent map slug
+tickets: {}                  # phase ID -> tracker reference
+prototype_branches: {}       # repo -> parked prototype branch
 ```
 
-Omit empty optional keys (`map`, `next`, `blockers`, `worktrees`, `phases`, `reviews`, `qa`, `prs`, `tickets`, `prototype_branches`) until they have content.
+`tickets` is a top-level phase-ID → tracker-reference mapping (for example `tickets: {1: "#43"}`). Omit optional keys until used: `next`, `blockers`, `approved_spec`, `worktrees`, `bases`, `phases`, `execution`, `reviews`, `qa`, `prs`, `map`, `tickets`, `prototype_branches`. Initialize execution counters once; clear `active` only after reconciling results or confirmed termination. Phase reports retain commit and verification details after active entries are removed.
 
-## Update duties per subcommand
+## Ownership and transitions
 
-| Subcommand    | Writes to state.yaml |
-| ------------- | -------------------- |
-| idea          | Creates folder + file: header comment, slug, title, repos, ticket if known, `map` when spawned from a wayfinder map, all steps pending (optionals skipped), `steps.idea: done` |
-| research      | `steps.research: done` |
-| prototype     | `steps.prototype: done`; `prototype_branches` if code was parked |
-| spec          | `steps.spec: done` |
-| plan          | `steps.plan: done`; `phases[]` with titles, repos, `blocked_by` edges, all statuses `pending` |
-| ticket        | `ticket:` (primary); `tickets:` phase-to-ref map for one-ticket-per-phase work; `steps.ticket: done` |
-| implement     | `steps.implement: in-progress` at start, `done` when every phase is `committed`; `worktrees`; per-phase status transitions. Findings-fix runs also flip each fixed finding's Status to `fixed` in the source review/QA doc after its commit - the doc is the durable fix state |
-| replan        | Rewrites `phases[]`; entries with `status: committed` stay byte-identical |
-| review        | `steps.review-code: done`; `reviews.code` |
-| qa            | Append a `qa[]` entry per pass (pass, env, date, verdict, open_findings); `steps.qa: done` when a pass ends PASS, `in-progress` after a non-PASS pass |
-| push          | `steps.push: done`; `prs` |
-| complete      | Deletes the entire workflow folder, state.yaml included - a completed workflow leaves no local state (`steps.complete` never persists as `done`) |
+These writes belong to the coordinator, including when it performs a step directly. Delegated workers return reports and never update shared state.
 
-## Derived reads
+- Idea creates identity and step defaults; optional steps start skipped. Research/prototype/spec/ticket update their step and related references.
+- Plan writes approved phase content to `plan.md`, phase IDs/edges/status to state, and `approved_spec`, with the matching snapshot in `logs/approved-spec.md`. Later spec edits use the cosmetic/material reconciliation in `./replan-instructions.md`.
+- Execution owns worktrees, bases, active work, attempts, per-phase status and `steps.implement`. Mark a phase committed only with committed work and complete evidence, or evidence the intended behavior already exists. Mark implement done once all phases are committed and required integration checks pass.
+- Review preserves its session in `execution.reviewer`, records pass provenance and sets `steps.review-code` done only on a clean full review meeting the configured reviewer requirement. A clean partial review cannot satisfy readiness or shipping gates. QA appends pass metadata and sets its step according to verdict.
+- Repairs close findings in their source reports based on evidence; they do not rewrite old QA verdicts or automatically upgrade review verdicts.
+- Push writes `prs` and its step; complete removes the workflow folder after shipment verification and cleanup.
 
-- **QA gate**: `qa[]` non-empty with the latest entry's verdict not `PASS` means QA has open findings - status shows it and "next" is the fix route (`/flow implement <slug>`), even though `steps.qa` is not `done`. `steps.qa: done` alone never proves the latest environment passed; always read the latest `qa[]` entry.
-- **status**: render the checklist from `steps`, phase progress from `phases`, latest QA verdict from `qa`.
-- **list**: read every `.flow/*/state.yaml`, sort by `updated`.
+`current` names the last/running subcommand, not a lifecycle status. At acceptance readiness it may remain `qa`; `execution.status: ready` and `next` express the handoff. A later code or material spec change, or a failed check, invalidates readiness even if older step flags still say done.
+
+## Stable IDs
+
+New attempt counters use `phase-<n>`, `setup-<repo>`, `integration-<repo>` (or `integration` for a cross-repo check), and `repair` for the shared review/QA repair-round budget. Use the same work-unit ID in `execution.active` and its attempt counter where applicable. Retry and resume reuse the existing ID and count; a new attempt never gets a new ID. Preserve legacy keys for their existing work instead of renaming them or creating parallel counters.
+
+Qualified finding IDs use `<report-basename>:<finding-id>`, such as `review-code:R1` or `qa-local:Q1`. Keep previously recorded forms as aliases for the same findings; do not create duplicates when resuming an older workflow.
+
+## Evidence and compatibility
+
+Review and QA evidence applies to the recorded spec digest and repo revisions, with no unexplained task changes in the trees. After a change, perform the affected verification and explicitly account for any reused unaffected evidence in a new report/pass covering the current revisions. Historical PASS is not current PASS.
+
+Reviewer sessions are optional recovery pointers, not proof of completed review. Keep them when clearing finished `active` entries. Record transport/host changes and replacement sessions in the report; preserve findings and attempt counters. Changing the reviewer requirement invalidates evidence that does not meet it. Recover missing provider metadata only from known provenance, never infer cross-model review from a clean verdict or a tool's name.
+
+Older states without the new fields remain readable. Recover bases from known branch creation/checkpoint information or a verified merge base; preserve existing phase IDs, worktrees, findings and tags. Infer a missing review scope from its report only when full-spec coverage is established. Missing revision/digest evidence means unverified, not failed code: obtain the missing review/QA evidence before marking ready. Treat legacy `steps.qa: skipped` as pending for autonomous readiness. Existing numbered finding IDs remain valid; qualify them by source report to avoid collisions.
+
+## Status and list
+
+Render steps, phase counts and the ready frontier (pending phases whose blockers are committed), execution status and active work, latest review, and latest QA per environment. For readiness/push gates, require current local evidence and account for any open findings in other environments; never use the last array entry alone as proof that local QA passed. Prefer explicit `next` and `blockers` to a derived next command.
+
+List `.flow/*/state.yaml` by `updated`. Completed workflows disappear because complete deletes the folder. List map folders with `map.md` and no state separately, showing title, status and open/total decision tickets. Do not treat map tickets as implementation phases.

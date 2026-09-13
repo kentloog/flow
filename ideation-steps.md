@@ -12,7 +12,7 @@ When spawned from a `/flow chart` handoff, seed from the map instead: destinatio
 
 ### 2. Grill
 
-Interview the user relentlessly about every aspect of the idea until a shared understanding is reached, per `grill-discipline.md` (this directory): walk down each branch of the decision tree, resolving dependencies between decisions one by one; one question at a time with a recommended answer; look up facts, ask decisions; the five challenge triggers; concrete-scenario stress tests. Do not move on until the user confirms the shared understanding. This is where the thinking happens - the later spec step synthesizes, it does not interview.
+Interview the user about every decision that changes what gets built until a shared understanding is reached, per `grill-discipline.md` (this directory): ask independent decisions in short rounds with recommended answers, then follow their dependent questions; look up facts and ask decisions; use the five challenge triggers and concrete-scenario stress tests. Move on when the user confirms the shared understanding. This is where the thinking happens - the later spec step synthesizes, it does not interview.
 
 Record as you go, never batched:
 
@@ -32,7 +32,7 @@ Per grill-discipline's ending rules: factual Open Questions -> recommend `/flow 
 
 Cache exploration findings in `research.md` (template: research-template.md). The doc is **temporary** - the whole workflow folder is deleted at complete, and stale research misleads later agents.
 
-Derive the questions from idea.md's Open Questions (let the user amend), split them into codebase questions and external questions, and fan out: one Explore subagent per repo for codebase questions (`model: sonnet`; return key files, patterns, extension points - `path:line` anchor per claim), and one web-research subagent per external topic (inherits the session model), investigating primary sources (official docs, source code, specs) with a URL per claim. Combine into `research.md`; update state.yaml.
+Derive the questions from idea.md's Open Questions (let the user amend), then investigate the codebase and external sources. Run independent investigations concurrently when the harness supports it and the work is large enough to justify delegation. Return key files, patterns, and extension points with a `path:line` anchor per code claim. Use primary sources for external claims and include a URL per claim. Combine the findings into `research.md`; update state.yaml.
 
 If Remaining Unknowns is non-empty, recommend `/flow prototype <slug>` to resolve them through experimentation; otherwise suggest `/flow prototype <slug>` or `/flow spec <slug>`.
 

@@ -18,20 +18,19 @@ If the codebase hasn't been explored in this conversation: targeted exploration 
 
 For decisions still open after synthesis, apply `grill-discipline.md` (this directory). If the residue reveals scope too large for one deliverable, recommend `/flow chart` - the current slug can become the map's first spawned deliverable.
 
-### 4. Seam sketch (the human checkpoint)
+### 4. Acceptance-test interface sketch (the human checkpoint)
 
-Before writing, sketch the seams at which the feature will be tested. Prefer existing seams to new ones; use the highest seam possible; the fewer seams across the codebase, the better - the ideal number is one. A durable interface gives tests something durable to target, so the code underneath can change without the tests moving.
+Before writing, sketch the interfaces through which the feature's acceptance criteria will be tested. Prefer existing interfaces and the highest level that keeps failures legible. A stable interface lets the code underneath change without moving the acceptance tests.
 
-Confirm the seams with the user; record them in Testing Decisions. They bind implementation: implement's subagents test only at these seams.
+Confirm the interfaces with the user and record them in Testing Decisions. They bind required acceptance tests. Supporting unit, integration, contract, and regression tests may use established repository interfaces.
 
 ### 5. Write the spec
 
 Write to `.flow/<slug>/spec.md` per `spec-template.md` (this directory). Rules:
 
-- **Accepted Risks & Tradeoffs is mandatory**: lift idea.md's draft entries plus anything the residual interview added. It instructs implementers (never "fix" an accepted risk) and reviewers (never flag one).
-- **Durable references, not speculative ones.** No speculative file paths or implementation code - they go stale. DO include references that encode a decision more precisely than prose can: schema shapes, type definitions, API contracts, a prototype snippet or mockup (trimmed to the decision-rich parts, noted as coming from the prototype), and test rubrics for the confirmed seams.
-- **User stories are the coverage mechanism**: an extensive numbered list covering all aspects of the feature, including edge cases and error states.
-- **Prefer deep modules in Implementation Decisions**: simple interfaces relative to the complexity they hide, testable in isolation.
+- **Accepted Risks & Tradeoffs is mandatory**: lift idea.md's draft entries plus anything the residual interview added. Record the conditions under which each risk is accepted. Leave it unhandled within those conditions; surface new evidence that invalidates them.
+- **Durable references, not speculative ones.** No speculative file paths or implementation code - they go stale. DO include references that encode a decision more precisely than prose can: schema shapes, type definitions, API contracts, a prototype snippet or mockup (trimmed to the decision-rich parts, noted as coming from the prototype), and test rubrics for the confirmed interfaces.
+- **User stories are the coverage mechanism**: include enough stories to cover required behavior, edge cases, and error states. Coverage is the target, not length.
 
 ### 6. ADR candidates and review
 

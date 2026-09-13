@@ -10,13 +10,13 @@ Read `.flow/<slug>/spec.md` fully.
 
 ### 2. Explore the codebase
 
-If the relevant code hasn't been explored in this conversation: the modules and services the spec touches, prior art for similar features, integration boundaries (schema, API, UI), and testing patterns. Use `Explore` subagents (`model: sonnet`) for heavy exploration - one per repo if cross-repo.
+If the relevant code has not been explored in this conversation, inspect the modules and services the spec touches, prior art for similar features, integration boundaries (schema, API, UI), and testing patterns. Delegate independent repository exploration when the harness supports it and the expected benefit exceeds the coordination cost.
 
-Look for opportunities to **prefactor** the code to make the implementation easier. "Make the change easy, then make the easy change."
+Note any preparatory change that would make the implementation easier.
 
 ### 3. Identify durable architectural decisions
 
-Before slicing, find the decisions unlikely to change as phases are built: route structures and URL patterns, DB schema shape, key data models, auth approach, third-party service boundaries. These go in the plan header so every phase can reference them - including **Test seams**, copied from the spec's Testing Decisions, which every phase's tests must go through.
+Before slicing, find the decisions unlikely to change as phases are built: route structures and URL patterns, DB schema shape, key data models, auth approach, third-party service boundaries. These go in the plan header so every phase can reference them, including the acceptance-test interfaces copied from the spec's Testing Decisions. Required acceptance tests use those interfaces; supporting tests follow repository practice.
 
 ### 4. Draft vertical slices
 
@@ -26,15 +26,15 @@ Vertical slice rules:
 
 - Each phase cuts a narrow but COMPLETE path through every layer it needs (schema, API, UI, tests) - vertical, NOT a horizontal slice of one layer.
 - A completed phase is demoable or verifiable on its own. If a phase's only verification is "compilation succeeds", merge it with the next - every phase needs a meaningful gate. Tests live in the same phase as the implementation.
-- Each phase is sized to fit in a single fresh context window - it will run as a fresh agent session, so sizing is a plan-time property, not a runtime hope.
-- Every phase declares its **Repo** (state.yaml tracks phases per repo; single-repo projects use `root`). Granularity: small-to-medium features get 2-3 phases (typically one per repo), not 5-8. Split by repo boundary or independently verifiable behavior, never by code layer.
-- Prefactoring first: where prefactoring would make the implementation easier, make it its own early phase.
+- Size phases as substantial bounded tasks that a fresh worker can complete. The harness may execute them directly when delegation is unavailable.
+- Every phase declares its **Repo** (state.yaml tracks phases per repo; single-repo projects use `root`). Use the fewest phases that respect repo boundaries, blocking edges, context-window sizing, and independent verification. Split by repo boundary or independently verifiable behavior, never by code layer.
+- Preparatory work gets its own early phase only when it is independently safe and verifiable; otherwise it lands inside the slice that needs it.
 - Self-containment: each phase section plus the plan header must be sufficient to implement the phase without reading other phases.
 - Do NOT include specific file names, function names, or implementation details likely to change as later phases are built. DO include durable decisions: route paths, schema shapes, data model names. Exception: a prototype snippet that encodes a decision more precisely than prose can, trimmed to the decision-rich parts.
 
 Give each phase its **blocking edges** - the phases that must complete before it can start. Declare only genuine gates; a phase with no blockers can start immediately, and independent phases can run in parallel off these edges (phases in the same repo share a working tree, so implement serializes them - keep that in mind when weighing granularity against parallelism).
 
-**Wide refactors are the exception to vertical slicing.** A wide refactor is one mechanical change - rename a column, retype a shared symbol - whose blast radius fans across the whole codebase, so no vertical slice can land green. Don't force it into a tracer bullet; sequence it as expand-contract. First expand: add the new form beside the old so nothing breaks. Then migrate the call sites in blast-radius-sized batches (per package, per directory), each batch its own phase blocked by the expand, keeping CI green batch to batch because the old form still exists. Finally contract: delete the old form once no caller remains, in a phase blocked by every migrate batch. When even the batches can't stay green alone, keep the sequence but let them share an integration branch that all block a final integrate-and-verify phase - green is promised only there.
+**Wide refactors are the exception to vertical slicing.** A wide refactor is one mechanical change - rename a column, retype a shared symbol - whose blast radius fans across the whole codebase, so no vertical slice can land green. Don't force it into a tracer bullet; sequence it as expand-contract. First expand: add the new form beside the old so nothing breaks. Then migrate the call sites in blast-radius-sized batches (per package, per directory), each batch its own phase blocked by the expand, keeping CI green batch to batch because the old form still exists. Finally contract: delete the old form once no caller remains, in a phase blocked by every migrate batch. When batches cannot stay green independently, keep them inside one verifiable phase; the worker may sequence internal batches without declaring incomplete phases committed.
 
 ### 5. Quiz the user
 
@@ -51,11 +51,11 @@ Ask the user:
 - Are the blocking edges correct - does each phase only depend on phases that genuinely gate it?
 - Should any phases be merged or split?
 
-Iterate until the user approves the breakdown.
+Before approval, include the local run/QA method, required access, and any material execution constraints. Resolve missing facts yourself. The plan should make autonomous execution feasible without prescribing file-level mechanics. Iterate on consequential decisions until approved; existing explicit approval does not need repeating.
 
 ### 6. Write the plan
 
-Write `.flow/<slug>/plan.md` per `plan-template.md` (this directory), then write `phases[]` to state.yaml: n, title, repo, blocked_by (each phase's Blocked-by line as an integer array; "None - can start immediately" -> `[]`), status `pending`. The plan file holds the content; state.yaml holds the status.
+Write `.flow/<slug>/plan.md` per `plan-template.md` (this directory), then write `phases[]` to state.yaml: n, title, repo, blocked_by (each phase's Blocked-by line as an integer array; "None - can start immediately" -> `[]`), status `pending`. The plan file holds the content; state.yaml holds the status. Validate phase IDs, repo names and dependency edges (no missing IDs, self-edges or cycles). Save the approved spec bytes to `logs/approved-spec.md`, then record their SHA256 in `approved_spec`; set local QA pending. The snapshot supports comparison after later edits and is not another spec to maintain. During execution, adjust pending batches within this approved outcome without repeating the planning interview.
 
 > Plan ready with N phases. Next: `/flow ticket <slug>` for tracker tickets, or `/flow implement <slug>` to start.
 

@@ -1,121 +1,132 @@
 # flow
 
-A product delivery workflow skill for [Claude Code](https://claude.com/claude-code): take an idea through a relentless grilling interview, a synthesized spec with agreed test seams, a tracer-bullet phase plan, autonomous implementation via subagents, cross-model code review, and QA - all the way to merged PRs.
+Describe the outcome. Shape the spec and plan together. Let agents implement, review, fix and test, then judge the result yourself.
+
+A delivery skill for **Claude Code Desktop and CLI** and **Codex desktop and CLI**.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/pipeline-dark.svg">
-  <img alt="The flow pipeline. An optional chart (wayfinder map) step feeds a human-in-the-loop band: idea (grill) → research (optional) → prototype (optional) → spec (confirm seams) → plan (tracer bullets) → ticket (optional). Then an autonomous AFK band: implement (frontier subagents) → review (cross-model) → local QA (optional), where review and QA findings re-enter implement as targeted fixes. Then a ship band with human checkpoints: push (branches and PRs) → env QA (optional) → complete (verify and clean up), with env QA findings also looping back to implement." src="assets/pipeline-light.svg" width="940">
+  <img alt="Collaborative discovery and planning, autonomous implementation and review with local QA, then human acceptance and publishing." src="assets/pipeline-light.svg" width="940">
 </picture>
 
-## Why
+## Start a feature
 
-Most agent-assisted feature work fails in the same places: decisions that were never actually made surface as guesses mid-implementation, tests get invented at whatever seam was convenient, reviews reward overbuilding, and "done" is declared without anyone reproducing the feature working. flow attacks each of those directly:
+| You and the agent | Claude Code | Codex |
+|-------------------|-------------|-------|
+| Define the problem | `/flow idea add API rate limiting` | `$flow idea add API rate limiting` |
+| Agree the requirements | `/flow spec rate-limiting` | `$flow spec rate-limiting` |
+| Approve useful slices | `/flow plan rate-limiting` | `$flow plan rate-limiting` |
+| Run the autonomous middle | `/flow implement rate-limiting` | `$flow implement rate-limiting` |
 
-- **Decisions are made at idea, not at spec.** The idea step grills you - one question at a time, a recommended answer per question, facts looked up rather than asked - until shared understanding is confirmed. Scenarios you decline to handle become **Accepted Risks**: documented decisions that bind implementers (never "fix" one) and reviewers (never flag one).
-- **Tests go through pre-agreed seams.** The spec step's one human checkpoint is confirming the interfaces the feature will be tested through. Implementation subagents test only there; a criterion untestable through a listed seam is a spec problem, reported rather than patched around.
-- **Implementation runs AFK and survives crashes.** One fresh subagent per plan phase, frontier-scheduled off explicit blocking edges, each committing its own work behind a typecheck/lint/test gate. State lives in `state.yaml` plus git checkpoint tags, so a dead session resumes with the same command.
-- **Review is adversarial in both directions.** A second model (Codex MCP when available, any CLI you configure, or a Claude subagent) reviews the diff against the spec; then one Claude verifier per finding tries to *kill* it - hallucinated anchors, pre-existing code, accepted risks, and code-adding findings without a spec citation all die before they can demand action. Simplicity findings carry the same weight as bugs.
-- **Simplicity is enforced, not hoped for.** Every implementer, fix agent, and reviewer gets the same constraint block: a decision ladder ending at "the minimum code that satisfies the spec", no abstraction without a second consumer, and a mandatory Skipped/add-when list so omissions are visible decisions instead of silent gaps.
-- **Workflow docs are temporary.** `complete` verifies the PRs merged, graduates lessons to durable homes (repo CLAUDE.md, ADRs, your notes), and deletes the whole workflow folder. Durable truth is the merged code, the PRs, and the tracker.
+The first run configures the project. Once the spec and plan are approved, one `implement` invocation covers implementation, review, repairs and local QA. It returns a demonstration and verification evidence, or a concrete blocker.
 
-## Requirements
+You decide outcomes, public contracts and trade-offs. Agents choose implementation details within that agreement. Use `chart` for work too large for one spec, or simply say "grill me" to explore an idea.
 
-- [Claude Code](https://claude.com/claude-code) and `git`. That's it for the core loop.
-- Optional, used when present:
-  - `gh` CLI - PR creation and merge verification on GitHub remotes
-  - An issue tracker - GitHub Issues, Jira, Linear, or a plain markdown backlog file (configured per project)
-  - A second-model reviewer - the [Codex MCP server](https://developers.openai.com/codex/mcp/) or any CLI (`codex exec`, `gemini`, ...); flow falls back to a Claude-only review with the same adversarial validation
-  - Browser tools - UI QA with screenshots; Claude Code's built-in browser needs no setup, and a browser MCP (e.g. chrome-devtools) adds performance traces and Lighthouse on top
+## Two models, one review conversation
 
-## Install
+| Implementation lead | Default reviewer |
+|---------------------|------------------|
+| Codex | Claude |
+| Claude | Codex |
 
-Clone into your Claude Code skills directory (all projects):
+```mermaid
+sequenceDiagram
+    participant I as Implementing agent
+    participant R as Other model
+    I->>R: Requirements, diff and current revisions
+    R-->>I: Findings with evidence
+    loop Until resolved or a concrete blocker
+        I->>I: Validate findings and fix supported issues
+        I->>R: Dispositions, fixes and test results
+        R-->>I: Reassess fixes and disputed findings
+    end
+    I->>I: Local QA (code fixes return to review)
+```
+
+Follow-ups reuse the reviewer session. A fresh session gets the saved review history when continuation is unavailable. Findings are checked against code and requirements; model agreement alone is not enough. An initial clean review goes straight to QA.
+
+`review.reviewer: auto` selects the opposite family. Flow uses an available review bridge, then the other provider's authenticated CLI if needed. It never silently substitutes self-review. You can explicitly choose `current` to opt out, or name `claude`, `codex` or a review command. [Review transport details](reviewer-transport.md).
+
+## Install and choose your host
+
+Install the whole directory, including its supporting files:
 
 ```bash
+# Codex desktop and CLI
+git clone https://github.com/kentloog/flow.git ~/.agents/skills/flow
+
+# Claude Code Desktop and CLI
 git clone https://github.com/kentloog/flow.git ~/.claude/skills/flow
 ```
 
-Or scope it to a single project by cloning into `<project>/.claude/skills/flow` instead.
+Project-local locations are `.agents/skills/flow` and `.claude/skills/flow`. Keep both copies on the same version. Restart sessions after updating a cached skill. Preserve local edits before updating an existing installation.
 
-Skills are discovered when a session starts, so open a **new** Claude Code session afterwards and type `/flow` - it should appear in the command suggestions. If you already have a skill named `flow`, clone to a different directory name (the directory name is the skill name; adjust the `name:` field in `SKILL.md` to match).
+| Host | Skill entry | Reviewer access |
+|------|-------------|-----------------|
+| Claude Code in Desktop | `/flow` | Codex bridge or `codex` CLI |
+| Claude Code CLI | `/flow` | Codex bridge or `codex` CLI |
+| Codex desktop app | `$flow` | Claude bridge or `claude` CLI |
+| Codex CLI | `$flow` | Claude bridge or `claude` CLI |
 
-To update later:
+Use a coding session with repository and shell access. Here, Claude Desktop means its **Code** experience; ordinary chat alone does not supply the local workflow tools. Claude Code shares skill and MCP configuration between Desktop and CLI. [Claude documentation](https://code.claude.com/docs/en/desktop). Codex discovers personal and repository skills. [Codex documentation](https://learn.chatgpt.com/docs/build-skills).
 
-```bash
-git -C ~/.claude/skills/flow pull
+Before leaving a run AFK, settle reviewer authentication, permissions, app startup and QA access. A UI feature needs browser tooling. The skill uses existing permissions and native model settings.
+
+## Resume without carrying every detail
+
+The coordinator keeps state and report pointers. Native workers use separate contexts when available; otherwise implementation runs sequentially. Full logs stay in files.
+
+```text
+.flow/
+├── config.yml              Project settings
+├── rate-limiting/
+│   ├── state.yaml          Progress, reviewer session and next action
+│   ├── spec.md / plan.md   Approved requirements and execution plan
+│   ├── review-code.md      Findings, decisions and follow-ups
+│   ├── qa-local.md         Behavior verified on recorded revisions
+│   └── logs/               Worker reports and verification evidence
+└── worktrees/              Isolated feature checkouts
 ```
 
-## Quick start
+Compaction continues from these files. After a crash, reopen the original project and run `implement` again. You can switch hosts where the same files are accessible; resume one coordinator at a time. A closed app cannot continue working, and old PASS results cannot certify changed code.
 
-```
-cd your-project
-claude
-> /flow idea add rate limiting to the public API
-```
+## Accept and ship
 
-The first run creates `.flow/config.yml` through a short setup interview (issue tracker, commit convention, worktrees, how to run the app locally). After that:
+Try the demonstration and judge the experience. Then use `push` to publish branches and PRs. `complete` verifies merged work and preserves useful decisions before cleaning up temporary files. Publication remains separate unless already authorized.
 
-| Command | What it does |
-|---------|--------------|
-| `/flow idea <description>` | Capture the idea, then grill the decisions out of it |
-| `/flow research <slug>` | Codebase + external exploration of factual open questions (optional) |
-| `/flow prototype <slug>` | Throwaway code that answers one question (optional) |
-| `/flow spec <slug>` | Synthesize the spec; confirm test seams |
-| `/flow plan <slug>` | Tracer-bullet phases with blocking edges; quiz until approved |
-| `/flow ticket <slug>` | Tracker tickets from the plan (optional) |
-| `/flow implement <slug>` | Autonomous frontier-scheduled implementation via subagents |
-| `/flow review <slug>` | Cross-model review with adversarial validation |
-| `/flow replan <slug>` | Regenerate pending phases after spec changes |
-| `/flow qa <slug> [env]` | QA locally, or against a configured deployed environment |
-| `/flow push <slug>` | Push branches and create PRs |
-| `/flow complete <slug>` | Verify merged, graduate lessons, delete the workflow folder |
-| `/flow chart <description>` | Wayfinder map for efforts too big for one spec |
-| `/flow status <slug>` / `/flow list` | Progress |
+<details>
+<summary>All commands</summary>
 
-For a fully AFK implementation run: `claude --dangerously-skip-permissions`, then `/flow implement <slug>`, and walk away - if the session dies, the same command resumes from state.
+Use the arguments below after `/flow` or `$flow`.
 
-You can also just say **"grill me"** about any plan or decision to get the interview without the pipeline.
+| Arguments | Purpose |
+|-----------|---------|
+| `setup` | Configure repositories, tracker, worktrees, QA and reviewer |
+| `chart <description or map>` | Map decisions above individual specs |
+| `idea <description>` | Define the problem and explore consequential decisions |
+| `research <slug>` / `prototype <slug>` | Resolve factual or design uncertainties |
+| `spec <slug>` | Agree requirements and acceptance interfaces |
+| `plan <slug>` / `ticket <slug>` | Plan verifiable slices / optional tracker tickets |
+| `implement <slug>` | Run or resume implementation, review, fixes and local QA |
+| `review <slug>` | Review and repair existing work; pending phases stay pending |
+| `qa <slug> [env]` | One local or configured environment QA pass |
+| `replan <slug> [phase]` | Adjust remaining work |
+| `push <slug>` / `complete <slug>` | Publish / verify merged and clean up |
+| `status <slug>` / `list` | Show progress, blockers and the next action |
 
-## Configuration
+</details>
 
-`/flow setup` writes `.flow/config.yml` in your project root (and re-runs any time to change it):
+<details>
+<summary>Configuration, design and validation</summary>
 
-```yaml
-layout: single-repo          # single-repo | multi-repo (repos as subdirectories)
-repos: []                    # multi-repo only: repo subdirectory names
+[Setup](setup-steps.md) defines `.flow/config.yml`. Existing `auto` configs now select the opposite family instead of falling back to self-review. [State](state-schema.md) defines recovery and evidence. [SKILL.md](SKILL.md) routes agents to the instructions they need.
 
-tracker:
-  type: github               # github | jira | linear | markdown | none
-  usage: "gh issue view/create in this repo"   # free text: how to interact with it
-  ref_format: "#42"          # how a ticket is referenced in commits/branches
+[Design notes and sources](SIMPLIFICATION-NOTES.md) explain the choices. [Validation results](ABLATION-PLAN.md) distinguish completed checks from scenarios still to test. Portability is a shared instruction contract; it is not a claim that every desktop permission setup has been tested.
 
-commit_convention: "#42: Imperative summary of what changed"
-
-worktrees: true              # false = work on a branch in the main checkout
-
-run:
-  notes: |                   # how to run the app locally for QA
-    npm run dev              # serves on :3000
-
-envs:                        # optional deployed environments for `/flow qa <name>`
-  - name: staging
-    url: https://staging.example.com
-    notes: "deploy: git push staging main; logs: flyctl logs -a myapp"
-
-review:
-  reviewer: auto             # auto (Codex MCP if available, else Claude) | claude | "<shell command>"
-```
-
-Everything else flow creates lives under `.flow/<slug>/` - one self-contained folder per workflow, deleted in full at `/flow complete`.
-
-## How it's built
-
-`SKILL.md` is a thin router; each subcommand loads only its own instruction file. Disciplines (`grill-discipline.md`, `simplicity-discipline.md`) are shared prompts injected into subagents; templates define every document the workflow writes; `state-schema.md` is the contract for `state.yaml`. Read `SKILL.md` first if you want to modify anything.
+</details>
 
 ## Credits
 
-The grilling interview discipline is sourced from Matt Pocock's grilling skill.
+Inspired by Matt Pocock's [wayfinder](https://github.com/mattpocock/skills/tree/main/skills/engineering/wayfinder), [grilling](https://github.com/mattpocock/skills/blob/main/skills/productivity/grilling/SKILL.md), [to-spec](https://github.com/mattpocock/skills/blob/main/skills/engineering/to-spec/SKILL.md) and [implement-spec](https://github.com/mattpocock/skills/blob/main/skills/in-progress/implement-spec/SKILL.md).
 
-## License
-
-[MIT](LICENSE)
+[MIT license](LICENSE)
