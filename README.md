@@ -121,7 +121,7 @@ Use the arguments below after `/flow` or `$flow`.
 
 [Setup](setup-steps.md) defines `.flow/config.yml`. [State](state-schema.md) is the index a new session reads. [Execution](execution.md) is the autonomous loop. [SKILL.md](SKILL.md) routes agents to the file they need.
 
-[Design notes and sources](SIMPLIFICATION-NOTES.md) explain the choices. [Validation results](ABLATION-PLAN.md) distinguish completed checks from scenarios still to test. Portability is a shared instruction contract, not a claim that every desktop permission setup has been tested.
+[Design notes](DESIGN-NOTES.md) carry the principles behind the workflow, what it borrows from Matt Pocock's skills, and what has not been tested yet. Portability is a shared instruction contract, not a claim that every desktop permission setup has been tested.
 
 </details>
 
