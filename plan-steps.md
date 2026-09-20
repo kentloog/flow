@@ -26,11 +26,11 @@ Vertical slice rules:
 
 - Each phase cuts a narrow but COMPLETE path through every layer it needs (schema, API, UI, tests) - vertical, NOT a horizontal slice of one layer.
 - A completed phase is demoable or verifiable on its own. If a phase's only verification is "compilation succeeds", merge it with the next - every phase needs a meaningful gate. Tests live in the same phase as the implementation.
-- Size phases as substantial bounded tasks that a fresh worker can complete. The harness may execute them directly when delegation is unavailable.
+- Size each phase to fit one fresh context window.
 - Every phase declares its **Repo** (state.yaml tracks phases per repo; single-repo projects use `root`). Use the fewest phases that respect repo boundaries, blocking edges, context-window sizing, and independent verification. Split by repo boundary or independently verifiable behavior, never by code layer.
 - Preparatory work gets its own early phase only when it is independently safe and verifiable; otherwise it lands inside the slice that needs it.
 - Self-containment: each phase section plus the plan header must be sufficient to implement the phase without reading other phases.
-- Do NOT include specific file names, function names, or implementation details likely to change as later phases are built. DO include durable decisions: route paths, schema shapes, data model names. Exception: a prototype snippet that encodes a decision more precisely than prose can, trimmed to the decision-rich parts.
+- Leave out file names, function names and implementation details likely to change as later phases land. Include durable decisions: route paths, schema shapes, data model names. Exception: a prototype snippet that encodes a decision more precisely than prose can, trimmed to the decision-rich parts.
 
 Give each phase its **blocking edges** - the phases that must complete before it can start. Declare only genuine gates; a phase with no blockers can start immediately, and independent phases can run in parallel off these edges (phases in the same repo share a working tree, so implement serializes them - keep that in mind when weighing granularity against parallelism).
 
@@ -48,14 +48,14 @@ Present the proposed breakdown as a numbered list. For each phase, show:
 Ask the user:
 
 - Does the granularity feel right? (too coarse / too fine)
-- Are the blocking edges correct - does each phase only depend on phases that genuinely gate it?
+- Are the blocking edges correct - does each phase only depend on phases that gate it?
 - Should any phases be merged or split?
 
-Before approval, include the local run/QA method, required access, and any material execution constraints. Resolve missing facts yourself. The plan should make autonomous execution feasible without prescribing file-level mechanics. Iterate on consequential decisions until approved; existing explicit approval does not need repeating.
+Before approval, fill Execution Readiness: how the criteria will be verified locally, what access is needed, the review depth this change deserves (a single pass for small changes, pass plus reassessment for wide or risky ones), and what the human will judge at the end. Resolve missing facts yourself. Iterate until approved; existing explicit approval does not need repeating.
 
 ### 6. Write the plan
 
-Write `.flow/<slug>/plan.md` per `plan-template.md` (this directory), then write `phases[]` to state.yaml: n, title, repo, blocked_by (each phase's Blocked-by line as an integer array; "None - can start immediately" -> `[]`), status `pending`. The plan file holds the content; state.yaml holds the status. Validate phase IDs, repo names and dependency edges (no missing IDs, self-edges or cycles). Save the approved spec bytes to `logs/approved-spec.md`, then record their SHA256 in `approved_spec`; set local QA pending. The snapshot supports comparison after later edits and is not another spec to maintain. During execution, adjust pending batches within this approved outcome without repeating the planning interview.
+Write `.flow/<slug>/plan.md` per `plan-template.md` (this directory), then write `phases[]` to state.yaml: n, title, repo, blocked_by (each phase's Blocked-by line as an integer array; "None - can start immediately" -> `[]`), status `pending`. The plan file holds the content; state.yaml holds the status. Check phase IDs, repo names and edges (no missing IDs, self-edges or cycles). During execution, pending batches may be adjusted within this approved outcome without another planning interview.
 
 > Plan ready with N phases. Next: `/flow ticket <slug>` for tracker tickets, or `/flow implement <slug>` to start.
 

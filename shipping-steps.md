@@ -1,48 +1,57 @@
-# Shipping Steps: push, complete
+# Shipping: push, complete
 
 ## /flow push <slug>
 
-Push feature branches and create pull requests. Separated from QA so PRs can go up independently. Read `state.yaml` (worktrees, ticket, repos), `spec.md`, `plan.md`, and the tracker/commit settings from `.flow/config.yml`.
+Publish the feature branches and open pull requests. An explicit `push` authorizes publication; inside an autonomous run, publish only when the user asked for it up front.
 
-An explicit push invocation authorizes publication. In a full execution run, first present the result for human acceptance unless the user already authorized continuing to publication.
+Preflight, silent when green. If any of these hold, list them and get the user's go-ahead: a phase not committed, review missing, partial or stale for the current revisions, local QA missing or stale, an open required finding, an entry in `blockers`.
 
-**Preflight - warn, don't hard-block.** Silent when green; if any of these hold, list them and get the user's explicit go-ahead before pushing:
+Per repo, from its worktree: skip repos with nothing ahead of `origin/<default>`. Push the branch (`git push -u origin <slug>`), including re-pushes after fixes. On a GitHub remote with `gh`, reuse an open PR for the branch if one exists, otherwise create one. Title per the project's commit convention, body per the template below. Without PR tooling, push and record `branch pushed`.
 
-- Phases not `committed` (`pending`, `in-progress`, or `failed`).
-- Review is missing or partial, has open required findings, does not meet the configured reviewer requirement, or lacks evidence for the current repo revisions and approved spec.
-- Local QA lacks PASS evidence for those revisions and spec, or another environment has unresolved required findings. Use the per-environment evidence rules in `state-schema.md`, not the last array entry alone.
-- A recorded worker is still active or working-tree changes are unexplained.
-- state.yaml `blockers` entries whose conditions aren't verifiably met - they exist precisely to gate this step.
+Record PR URLs in `prs`, then report them with the next step: `/flow qa <slug> <env>` or `/flow complete <slug>`.
 
-**Per repo, from the working-tree path.** Skip repos with no commits ahead of `origin/<default>` and note them; a repo with no `origin` remote has nothing to push - report it and treat its branch as local-only (complete verifies it against the local default branch). For each remaining repo:
+### PR body
 
-- **Push the branch whenever it has commits the remote lacks** (`git push -u origin <slug>`) - including re-pushes after QA/review fix commits; an existing PR never suppresses the push.
-- **Create the PR** when the remote supports it and the tooling exists (GitHub remote + `gh`: check for an existing open PR for the branch first - if one exists, record its URL and skip only the creation, since a previous push run may have died before writing state; otherwise `gh pr create`). Title per the project's commit convention + engineering language (never internal workflow naming); description summarizes what was built (from the spec) in engineering language, links the primary ticket per the tracker's convention (`Closes #42` on GitHub), and lists per-phase tickets when state.yaml has a `tickets:` map.
-- **No PR tooling** (non-GitHub remote without a CLI, or no remote PR flow at all): push the branch, record `branch pushed: <slug>` in state.yaml `prs`, and tell the user - they can open an MR manually or merge locally if that's the project's style.
+Adapted from Matt Pocock's `pr` skill, which credits Dex Horthy's show-me. Use the project's domain language and no internal phase names.
 
-**Record PR URLs** in state.yaml (`prs`) and report:
-> PR(s) created: <repo>: <url>
-> Next: `/flow qa <slug> <env>` for environment QA, or `/flow complete <slug>` if QA is done.
+```markdown
+Closes #42
+
+## Summary
+
+<the smallest view that makes the change clear: pseudocode for logic, a call tree
+for control flow, a component or file tree for structure, a diff-sketch when the
+shape already exists, Mermaid for interaction between parts. Usually one of these.>
+
+## Evidence
+
+- Before: <screenshot, output or failing test>
+  After: <screenshot, output or passing test>
+
+## Merge danger
+
+Door: <one-way or two-way, and why>
+Blast radius: <one word, then what it could affect>
+```
+
+Screenshots are the best evidence for visual changes, test or command output next. Point at the QA report's evidence rather than re-running it.
 
 ## /flow complete <slug>
 
-1. **Verify shipped:** `git fetch origin` first per repo (stale local refs report freshly-merged PRs as open), then for each `prs` entry with a PR URL check the merge state (`gh pr view --json state,mergedAt` on GitHub). For branch-only entries, verify the branch is merged into the default branch (`git branch -r --merged origin/<default>` contains it - or the local default branch for remote-less repos). All merged - proceed. Otherwise report what's still open and stop unless the user explicitly overrides.
+1. Verify shipped. `git fetch origin` per repo, then check each PR is merged (`gh pr view --json state,mergedAt`) or each branch is in `origin/<default>`. Anything open: report and stop unless the user overrides.
 
-2. **Graduate lessons.** The workflow folder is about to be deleted, so anything with lasting value must move to a durable home now. Mine the run's artifacts (phase logs, review-code.md, QA docs, journal.md if present) for what went wrong, took longer than expected, or would trip the next agent, then route each candidate by audience:
+2. Retro. The workflow folder is about to go, so read the reports once for anything that would improve the next run's environment. Categories, from Matt Pocock's `retro` skill:
 
-   | Audience | Home |
-   |----------|------|
-   | Everyone working in a repo (conventions, gotchas, toolchain facts) | That repo's `CLAUDE.md` / `AGENTS.md` - propose the exact diff; it's a shared file, so the user approves before it lands |
-   | A durable architectural decision (three-part ADR test from grill-discipline.md) | Recommend an ADR in the project's convention; the user decides |
-   | Only this user / this machine (personal tooling, env quirks) | The user's own memory/notes - offer, don't push |
+   - Navigation: a file or dependency that took long to find wants a pointer in the repo's `CLAUDE.md` or `AGENTS.md`.
+   - Automated checks: a mistake a linter, type check, test or hook would have caught wants that check. An existing check that is unwired or broken is the finding.
+   - Standards: a mechanical rule (banned API, import shape, file location) becomes a check, never prose. A judgement call goes to the repo's coding standards, which reviewers read, not implementers.
+   - Tool economy and information access: a slow tool, a log the agent could not see.
+   - No-ops: an instruction in a steering file that changed nothing.
 
-   Prefer a deterministic check, a corrected run command, or a narrowly relevant skill over another general instruction. Graduate an instruction only for a demonstrated recurring failure or durable non-obvious fact. Most runs need no new rules. Preserve useful acceptance evidence in the PR before removing local reports.
+   Build the check over writing the rule. Keep `CLAUDE.md` to navigation pointers. A decision that is hard to reverse, surprising without context and the result of a real trade-off is an ADR candidate; the user decides. Propose diffs to shared files for the user to approve. Most runs need nothing.
 
-3. **Clean up:**
-   - Delete leftover checkpoint tags in each repo: list `workflow-checkpoint-<slug>-*` tags and delete the explicit matching names when non-empty
-   - Delete the prototype branch(es) if `state.yaml` records `prototype_branches`.
-   - Remove worktrees per entry in `state.yaml` `worktrees`: `git -C <repo> worktree remove <path>` (inspect dirty files first; remove only known disposable run artifacts, preserving unrelated or unexplained changes), then delete the merged local feature branch: `git -C <repo> branch -d <slug>`. When `worktrees: false` recorded the main checkout instead: check out the default branch there, then delete the feature branch the same way.
+3. Clean up. Remove worktrees (`git -C <repo> worktree remove <path>`; inspect dirty files first and keep anything unexplained), then delete merged local branches and parked prototype branches. With `worktrees: false`, check out the default branch first.
 
-4. **Delete the workflow folder** - the whole of `.flow/<slug>/`, state.yaml included. Once shipped, the durable truth is the merged code, the PRs, and the ticket; a kept spec describes the feature as designed at one moment and goes confidently stale. A completed workflow leaves no local state and disappears from `/flow list` - by design.
+4. Delete `.flow/<slug>/`. Merged code, PRs and tickets are the record; a kept spec goes stale.
 
-5. **Report:** PRs verified merged, lessons graduated (and where each landed), what was deleted.
+5. Report: PRs verified merged, retro items and where they landed, what was deleted.

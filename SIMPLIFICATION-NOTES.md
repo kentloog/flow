@@ -67,7 +67,7 @@ Three smaller clarifications cover dirty first-run checkouts, comparison with an
 
 The user explicitly requested bidirectional cross-model review after the initial simplification. `auto` now selects Claude for Codex-led work and Codex for Claude-led work. The implementing agent validates findings, repairs supported issues and sends dispositions and evidence back to the same reviewer session. Session replacement retains the report history and repair budget. Missing required reviewer access cannot silently become self-review or acceptance readiness; `current` remains an explicit opt-out.
 
-Transport details live in [reviewer-transport.md](reviewer-transport.md), loaded for setup or review. Native delegation remains optional for implementation. Review uses the tools exposed in the host, with CLI fallback, explicit session IDs and read-only scope. The README distinguishes Claude Code's desktop experience from ordinary chat and gives both harnesses' invocation and installation paths.
+Transport details lived in `reviewer-transport.md`, since folded into `review-steps.md`. Native delegation remains optional for implementation. Review uses the tools exposed in the host, with CLI fallback, explicit session IDs and read-only scope. The README distinguishes Claude Code's desktop experience from ordinary chat and gives both harnesses' invocation and installation paths.
 
 This is a user-selected workflow policy, not a claim that every project needs two models. The invocation and continuation guidance is grounded in [Claude's programmatic sessions](https://code.claude.com/docs/en/headless), [Claude Desktop's shared configuration](https://code.claude.com/docs/en/desktop), [Codex non-interactive sessions](https://learn.chatgpt.com/docs/non-interactive-mode), and installed CLI help. These sources establish available mechanisms, not a guarantee that every host exposes them or that cross-model review improves every task.
 
@@ -76,3 +76,15 @@ Claude's portability review led to three narrow corrections: explicit verificati
 ## Validation limits
 
 See [ABLATION-PLAN.md](ABLATION-PLAN.md) for checks and remaining experiments. This pass does not claim measured improvement across Opus 5, Fable 5.1, GPT-5.6 Sol and GPT-6 Astra. Installed skill copies outside this repository are not synchronized here.
+
+## Polish, 2026-09-20
+
+Second pass against the same sources plus the reply threads and the current state of Matt Pocock's skills repo (his `implement` skill is 70 words; `writing-for-agents`, `code-review`, `retro` and `pr` did not exist when flow borrowed from him).
+
+- The autonomous band (`execution-steps.md`, `implement-instructions.md`, `qa-steps.md`, `replan-instructions.md`) became one `execution.md`. It opens with Anthropic's tested autonomy block, defines done once, and replaces the attempt ledger with one stop rule. The spec digest and snapshot machinery is gone; a changed spec is checked against the plan directly.
+- `state.yaml` shrank to what a new session needs. Attempt counters, active handles, provenance fields, finding-ID aliases and the compatibility section were removed. Provenance lives in the review report.
+- Review keeps the cross-model requirement. The brief takes the two-axis shape from Matt's `code-review` (spec, standards and simplicity, under 400 words each) and asks for everything rather than a conservative list, per the Opus 5 guide. The reviewer is reached through the host's MCP bridge, the Codex server in Claude Code and the Claude reviewer server in Codex, with the session id carried in state. The bridge's own configuration governs model and permissions; the brief carries the read-only role. Depth is set in the plan.
+- Push uses the `pr` body template (summary sketch, before-and-after evidence, merge danger). Complete uses `retro`'s categories, with a check preferred over a rule.
+- The whole repo had a `writing-for-agents` pass: one meaning in one place, positive phrasing, no legacy sections, environment lookups left to the environment.
+
+The installed copies were not synchronized in this pass either.

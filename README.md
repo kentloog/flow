@@ -45,7 +45,7 @@ sequenceDiagram
 
 Follow-ups reuse the reviewer session. A fresh session gets the saved review history when continuation is unavailable. Findings are checked against code and requirements; model agreement alone is not enough. An initial clean review goes straight to QA.
 
-`review.reviewer: auto` selects the opposite family. Flow uses an available review bridge, then the other provider's authenticated CLI if needed. It never silently substitutes self-review. You can explicitly choose `current` to opt out, or name `claude`, `codex` or a review command. [Review transport details](reviewer-transport.md).
+`review.reviewer: auto` selects the opposite family through the host's MCP bridge, a Codex server in Claude Code or a Claude reviewer server in Codex. It never silently substitutes self-review. You can explicitly choose `current` to opt out, or name `claude`, `codex` or a review command. Details in [review-steps.md](review-steps.md).
 
 ## Install and choose your host
 
@@ -61,12 +61,12 @@ git clone https://github.com/kentloog/flow.git ~/.claude/skills/flow
 
 Project-local locations are `.agents/skills/flow` and `.claude/skills/flow`. Keep both copies on the same version. Restart sessions after updating a cached skill. Preserve local edits before updating an existing installation.
 
-| Host | Skill entry | Reviewer access |
+| Host | Skill entry | Reviewer bridge |
 |------|-------------|-----------------|
-| Claude Code in Desktop | `/flow` | Codex bridge or `codex` CLI |
-| Claude Code CLI | `/flow` | Codex bridge or `codex` CLI |
-| Codex desktop app | `$flow` | Claude bridge or `claude` CLI |
-| Codex CLI | `$flow` | Claude bridge or `claude` CLI |
+| Claude Code in Desktop | `/flow` | Codex MCP server |
+| Claude Code CLI | `/flow` | Codex MCP server |
+| Codex desktop app | `$flow` | Claude reviewer MCP server |
+| Codex CLI | `$flow` | Claude reviewer MCP server |
 
 Use a coding session with repository and shell access. Here, Claude Desktop means its **Code** experience; ordinary chat alone does not supply the local workflow tools. Claude Code shares skill and MCP configuration between Desktop and CLI. [Claude documentation](https://code.claude.com/docs/en/desktop). Codex discovers personal and repository skills. [Codex documentation](https://learn.chatgpt.com/docs/build-skills).
 
@@ -74,17 +74,17 @@ Before leaving a run AFK, settle reviewer authentication, permissions, app start
 
 ## Resume without carrying every detail
 
-The coordinator keeps state and report pointers. Native workers use separate contexts when available; otherwise implementation runs sequentially. Full logs stay in files.
+The coordinator keeps a short `state.yaml` and pointers to reports. Workers run as background subagents where the host has them; otherwise the coordinator does the work itself. Full logs stay in files.
 
 ```text
 .flow/
 ├── config.yml              Project settings
 ├── rate-limiting/
-│   ├── state.yaml          Progress, reviewer session and next action
+│   ├── state.yaml          Progress, reviewer session, next action
 │   ├── spec.md / plan.md   Approved requirements and execution plan
 │   ├── review-code.md      Findings, decisions and follow-ups
-│   ├── qa-local.md         Behavior verified on recorded revisions
-│   └── logs/               Worker reports and verification evidence
+│   ├── qa-local.md         Behaviour verified on recorded revisions
+│   └── logs/               Worker reports
 └── worktrees/              Isolated feature checkouts
 ```
 
@@ -92,7 +92,7 @@ Compaction continues from these files. After a crash, reopen the original projec
 
 ## Accept and ship
 
-Try the demonstration and judge the experience. Then use `push` to publish branches and PRs. `complete` verifies merged work and preserves useful decisions before cleaning up temporary files. Publication remains separate unless already authorized.
+Try the demonstration and judge the experience. Then use `push` to publish branches and PRs; the PR body shows the change as a sketch, before-and-after evidence, and merge danger. `complete` verifies merged work, runs a short retro that prefers a new automated check over a new rule, and deletes the workflow folder. Publication stays separate unless already authorized.
 
 <details>
 <summary>All commands</summary>
@@ -119,14 +119,14 @@ Use the arguments below after `/flow` or `$flow`.
 <details>
 <summary>Configuration, design and validation</summary>
 
-[Setup](setup-steps.md) defines `.flow/config.yml`. Existing `auto` configs now select the opposite family instead of falling back to self-review. [State](state-schema.md) defines recovery and evidence. [SKILL.md](SKILL.md) routes agents to the instructions they need.
+[Setup](setup-steps.md) defines `.flow/config.yml`. [State](state-schema.md) is the index a new session reads. [Execution](execution.md) is the autonomous loop. [SKILL.md](SKILL.md) routes agents to the file they need.
 
-[Design notes and sources](SIMPLIFICATION-NOTES.md) explain the choices. [Validation results](ABLATION-PLAN.md) distinguish completed checks from scenarios still to test. Portability is a shared instruction contract; it is not a claim that every desktop permission setup has been tested.
+[Design notes and sources](SIMPLIFICATION-NOTES.md) explain the choices. [Validation results](ABLATION-PLAN.md) distinguish completed checks from scenarios still to test. Portability is a shared instruction contract, not a claim that every desktop permission setup has been tested.
 
 </details>
 
 ## Credits
 
-Inspired by Matt Pocock's [wayfinder](https://github.com/mattpocock/skills/tree/main/skills/engineering/wayfinder), [grilling](https://github.com/mattpocock/skills/blob/main/skills/productivity/grilling/SKILL.md), [to-spec](https://github.com/mattpocock/skills/blob/main/skills/engineering/to-spec/SKILL.md) and [implement-spec](https://github.com/mattpocock/skills/blob/main/skills/in-progress/implement-spec/SKILL.md).
+Inspired by Matt Pocock's [skills](https://github.com/mattpocock/skills): wayfinder, grilling, to-spec, to-tickets, implement-spec, code-review, retro, pr and writing-for-agents. The PR body template descends from Dex Horthy's show-me.
 
 [MIT license](LICENSE)

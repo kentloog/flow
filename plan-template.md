@@ -9,17 +9,17 @@
 
 Durable decisions that apply across all phases:
 
-- **Acceptance-test interfaces:** <copied from the spec's Testing Decisions - the confirmed interfaces for required acceptance tests>
-- **Routes:** ...
-- **Schema:** ...
-- **Key models:** ...
-- (add/remove entries as appropriate)
+- Acceptance-test interfaces: <copied from the spec's Testing Decisions>
+- Routes: ...
+- Schema: ...
+- Key models: ...
 
 ## Execution Readiness
 
-- **Local verification:** how the acceptance criteria will be exercised, required services and browser/access needs; link project run instructions.
-- **Human acceptance:** the demonstration and taste judgments to return with at the end.
-- **Constraints:** material execution limits or already authorized external actions, when relevant. Implementation methods remain the agent's choice.
+- Local verification: how the acceptance criteria will be exercised, required services, browser or access needs; link project run instructions.
+- Review depth: single pass | pass plus reassessment, and why.
+- Human acceptance: the demonstration and the taste judgements to return with at the end.
+- Constraints: material execution limits or already authorized external actions, when relevant.
 
 ---
 
@@ -31,15 +31,14 @@ Durable decisions that apply across all phases:
 
 ### What to build
 
-The end-to-end behavior this phase makes work, from the user's perspective - not a layer-by-layer implementation list.
+The end-to-end behaviour this phase makes work, from the user's perspective, not a layer-by-layer list.
 
 ### Acceptance criteria
 
-Each criterion notes the approved interface used to verify it.
+Each criterion names the approved interface used to verify it.
 
 - [ ] Criterion 1
 - [ ] Criterion 2
-- [ ] Criterion 3
 
 ---
 

@@ -8,8 +8,16 @@ Most miscommunication between human, AI, and codebase comes from missing shared 
 
 ## Interview mechanics
 
-- Map consequential decisions and their dependencies. Ask the ready frontier: a short numbered round of independent questions, each with a recommendation. Ask dependent questions in the next round after their prerequisites are answered. Use one question when dependency or complexity calls for it.
-- Wait for the human's answers; never simulate them. Research factual unknowns yourself while continuing questions that do not depend on those facts.
+- Map consequential decisions as a design tree: every decision branches into the decisions that hang off it. Ask the ready frontier, the questions whose prerequisites are settled, as one numbered round with a recommended answer each. Dependent questions wait for the next round. Use one question when dependency or complexity calls for it. Format a round as:
+
+  ```
+  Q1 - <question title>: <question body, with choices where useful>
+  -> <your recommended answer>
+
+  Q2 - ...
+  ```
+
+- Wait for the human's answers. Research factual unknowns yourself, in a background subagent where the harness has one, and keep asking the questions that do not depend on those facts meanwhile.
 - For each question, provide your recommended answer - the user can accept with a word or override.
 - If a fact can be found by exploring the environment (filesystem, code, tools), look it up rather than asking. The decisions, though, are the user's - put each one to them and wait for the answer. Never answer your own questions.
 - Summarize decisions periodically to confirm alignment.
@@ -27,7 +35,7 @@ The triggers below are reactive; this move is proactive. When domain relationshi
 
 ## When to challenge (5 triggers)
 
-Do NOT challenge every domain term. Apply discipline only when one of these fires:
+Let most domain terms pass. Challenge when one of these fires:
 
 1. **Conflict with repo vocabulary** - the user's usage contradicts the repo's existing language (a CONTEXT.md/glossary read as reference, or consistent naming in code). Surface the conflict and resolve it in conversation; the resolution lands in the decision record, not in the glossary file.
 2. **Ambiguous domain term** - the term could plausibly mean two or more distinct things in the domain (e.g., "account" = customer org or login user; "order" = the cart submission or the fulfillment record). Propose a canonical name and ask the user to pick.
@@ -59,4 +67,4 @@ After the spec is written, append an "ADR Candidates" section listing decisions 
 
 What tends to qualify: architectural shape ("the write model is event-sourced"); integration patterns between contexts ("these services communicate via domain events, not synchronous HTTP"); technology choices that carry lock-in (database, message bus, auth provider - not every library); deliberate deviations from the obvious path ("manual SQL instead of the ORM because X" - these stop the next engineer from "fixing" something deliberate); constraints not visible in the code ("response times under 200ms because of the partner API contract").
 
-One-line summary per candidate. Do NOT write ADRs yourself - surface the list; the user decides whether to record any (in the project's ADR convention, e.g. `docs/adr/`, if it keeps one).
+One-line summary per candidate. Surface the list; the user decides whether to record any in the project's ADR convention.

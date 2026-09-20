@@ -1,39 +1,39 @@
-# Review pass
+# Review
 
-Review the integrated change against the full approved spec and relevant repo conventions. This procedure produces one durable pass; `./execution-steps.md` owns repair and re-review. A standalone `flow review` reviews and repairs existing work, then returns. When phases remain unfinished, label the scope partial and list those phases as remaining work, not defects to implement during review.
+One review pass by the other model family, validated and fixed by the implementing side. The reviewer advises; the coordinator fixes.
 
-## Reviewer and inputs (coordinator only)
+## Reviewer
 
-Resolve config `review.reviewer` using `./reviewer-transport.md`. With `auto`, select the opposite of `execution.implementation_family`: Codex-led work gets Claude, Claude-led work gets Codex. For existing work without that field, use known implementation provenance; for standalone review where authorship is unknown, select the opposite of the current coordinator and disclose that limit. An explicit user cross-model requirement takes precedence over a same-family or `current` config. Missing required reviewer access blocks clean completion; never silently downgrade to self-review.
+`review.reviewer` in `.flow/config.yml`:
 
-Use one independent reviewer session for the whole change where practical. Split a large review into bounded areas only when useful; every area gets the full spec path and relevant integration contracts, and one pass consolidates the results. The implementing agent validates the findings; a reviewer fleet or separate validator is not required. Reviewers inspect and advise, while the implementation side owns all fixes.
+| Value | Reviewer |
+|-------|----------|
+| `auto` (default) | Claude for Codex-led work, Codex for Claude-led work |
+| `claude` / `codex` | That provider |
+| `current` | Self-review; the report says so |
+| a command | That command; confirm which provider it runs |
 
-Pass absolute spec and working-tree paths, recorded base commits, current heads and report path. Include repo conventions and a self-contained statement of scope, accepted risks and review criteria; the reviewer cannot see the coordinator's conversation. Review each base-to-head diff and surrounding source needed to assess it. An empty diff is not automatically a failure: verify whether the approved behavior already exists and record that conclusion with evidence. Read full requirements to catch omissions; implementation summaries are navigation aids, not the requirements source.
+Family follows who wrote the code, not which app is open. When authorship is unknown, treat the current coordinator's family as the author. A Claude subagent reviewing Claude's code is self-review.
 
-## Review criteria
+Reach the other family through the MCP bridge the host exposes. Discover the callable tools and read their schemas rather than assuming names; the usual shapes are a Codex bridge in Claude Code (`codex`, then `codex-reply` with the returned `threadId`) and a Claude reviewer bridge in Codex (`claude`, then `claude_reply` with the returned `sessionId`). Send the brief as the prompt and nothing else: the bridge's model, approval policy, sandbox and working directory come from the user's own configuration, and overriding them from here misconfigures the review. Record the provider and the returned session id in `state.yaml` as soon as the first call returns, and pass that id to every follow-up so the reviewer keeps its context.
 
-- Spec fidelity: missing, partial, incorrect or unrequested behavior.
-- Correctness and regressions introduced or exposed by the change, including security and data integrity.
-- Simplicity and conventions: use `./simplicity-discipline.md`; a simpler design needs a concrete maintenance or correctness benefit, not a line-count target.
-- Test sufficiency at approved acceptance interfaces and relevant supporting interfaces.
-- Integration contracts across changed components and repos.
+The bridge inherits the host's permissions, so the brief carries the role: the reviewer reads the source and the diff, reports findings, and makes no edits, commits or state changes. It does not call another reviewer. Fixes belong to the implementing side.
 
-Findings need a concrete trigger, impact, evidence and a repair direction. Anchor to the actual source/symbol or to an omitted requirement; an omission need not have a changed line. Spec-fidelity findings cite the requirement. Regressions can cite an existing behavioral contract or reproduction even when the spec did not restate it.
+No bridge configured is a blocker to resolve in setup, never a silent fall back to self-review. A timeout is not a finished reviewer: read the session for a result before sending anything again, and continue that session instead of starting a second one. A session id is valid only for the provider and host that issued it; after a host change, start a fresh session with the brief and the latest report.
 
-## Triage and persist
+## Brief
 
-Validate findings against source and evidence in one pass. Reject unsupported claims, unrelated pre-existing issues and requests outside scope. Accepted risks are not defects under their stated conditions; new evidence that invalidates those conditions is a decision to surface. Code additions are justified when needed for approved behavior or an introduced regression. Check callers and trust boundaries before accepting a claim that a guard is unnecessary.
+The reviewer sees none of your conversation. Write the brief to a file with absolute paths to `spec.md`, the worktrees and the base commits, the diff command (`git diff <base>...HEAD`), the accepted risks, and the repo's documented standards if any. Ask for two reports, each under 400 words:
 
-Prioritize by impact and confidence; categories organize findings but do not make cosmetic changes equal to data loss. Record rejected findings with reasons so they do not recur. A required issue cannot be marked `wontfix` merely to get a clean verdict; link the existing accepted decision or obtain one for a material change.
+- Spec: requirements missing or partial, behaviour nobody asked for, requirements that look implemented but wrong. Quote the spec line per finding.
+- Standards and simplicity: breaches of documented standards, and places where a concrete simpler design keeps the behaviour. Judgement calls labelled as such. Skip what tooling already enforces.
 
-A delegated reviewer returns findings. The coordinator saves the output and writes or appends `review-code.md` using `./review-template.md` **before** fixes start. Carry unresolved findings into the latest pass, retaining their IDs and decision history.
+Ask for everything with evidence; you filter. Asking the reviewer to be conservative makes it report less.
 
-The coordinator sets `reviews.code` to the pass, scope (`full` or `partial`), verdict, implementation and reviewer families, report path, current repo revisions and approved spec digest; `steps.review-code` is `done` only for a clean full pass meeting the reviewer requirement. A partial pass leaves it `in-progress` and cannot satisfy readiness or shipping gates. Fixed findings alone do not make an old review current: re-review the changed result.
+## Triage and fix
 
-## Continue the review conversation
+Check each finding against the code and the spec. Reject what the evidence does not support, what the spec accepted as a risk and pre-existing issues outside the change, and write down why. Group the valid findings into one fix unit per worktree. Reply in the reviewer's session with the dispositions, the fix commits and the check results, and ask it to reassess. Stop when no supported finding remains. A first pass with no findings needs no reply. A dispute that repeats without new evidence becomes an open decision for the human.
 
-After triage and any repairs, reply in the same recorded reviewer session with finding IDs, accepted/rejected dispositions and reasons, fix commits, reproduction/test results, current heads and the report path. Ask the reviewer to check the fixes and consequences, and reconsider disputed findings against that evidence. Validate new or persistent findings yourself; agreement alone is not proof. Persist the resulting pass before another repair round.
+Depth follows the plan's readiness section: a single pass for small changes, pass plus reassessment when fixes were made or the plan asked for it.
 
-Close the exchange when the reviewer has assessed the current result and no supported required finding remains. Explain evidence-based disagreements in the report; neither rubber-stamp findings nor require agreement on preferences. If every finding was rejected without code changes, still send the reasons back once. An initial clean review needs no ceremonial extra round. QA repairs return to this same loop. The shared repair budget applies across sessions; if a dispute repeats without new evidence, record the unresolved decision and stop dependent work.
-
-Reuse the session for the same target and focused fixes. Start fresh if it is unavailable, context is no longer useful, or the target or reviewer family changes; pass the requirements, latest report, decisions and current revisions. Follow the recovery rules in `./reviewer-transport.md` before replacing an uncertain running call. A new session never resets findings or budgets. In the full run a clean review leads directly to local QA.
+Write `review-code.md` per `./review-template.md` before fixing, and record the verdict, scope and reviewed revisions in `state.yaml`. Only a full-scope clean review counts toward readiness and push. Fixed findings do not make an old review current; changed code gets re-reviewed.

@@ -4,11 +4,11 @@
 
 Produce the spec: the destination document with user stories, implementation decisions, and testing decisions. (The document is a PRD by another name.)
 
-**Synthesis, not interview.** The thinking happened at the idea step's grilling session (and on the wayfinder map, for chart-spawned runs). Everything idea.md and research.md settle is synthesized, never re-asked. A residual interview covers only decisions that are still genuinely open - there should be few.
+**Synthesis, not interview.** The thinking happened at the idea step's grilling session (and on the wayfinder map, for chart-spawned runs). Everything idea.md and research.md settle is synthesized, never re-asked. A residual interview covers only decisions still open, and there should be few.
 
 ### 1. Gather context
 
-Read `idea.md` fully - Settled Decisions, Accepted Risks (draft), Open Questions, Prototype Findings - and `research.md` if present. Do NOT proceed without a clear problem statement; if none exists, elicit it first (that's a sign the idea step was skipped - consider running its grilling now).
+Read `idea.md` fully - Settled Decisions, Accepted Risks (draft), Open Questions, Prototype Findings - and `research.md` if present. A missing problem statement means the idea step was skipped: run its grilling first.
 
 ### 2. Light exploration
 
@@ -34,7 +34,7 @@ Write to `.flow/<slug>/spec.md` per `spec-template.md` (this directory). Rules:
 
 ### 6. ADR candidates and review
 
-Append the ADR Candidates section per grill-discipline.md (only decisions that are hard to reverse AND surprising without context AND the result of a real trade-off; omit if empty). Surface the list; the user decides whether to record any in the project's ADR convention - do not write ADRs yourself.
+Append the ADR Candidates section per grill-discipline.md (decisions that are hard to reverse, surprising without context and the result of a real trade-off; omit if empty). The user decides whether to record any.
 
 Ask the user to review and iterate on any sections. Update state.yaml.
 
