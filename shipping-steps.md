@@ -4,7 +4,7 @@
 
 Publish the feature branches and open pull requests. An explicit `push` authorizes publication; inside an autonomous run, publish only when the user asked for it up front.
 
-Preflight, silent when green. If any of these hold, list them and get the user's go-ahead: a phase not committed, review missing, partial or stale for the current revisions, local QA missing or stale, an open required finding, an entry in `blockers`.
+Preflight, silent when green. Check the readiness conditions in `./state-schema.md`, including current evidence, a full clean review and local QA `PASS`. If any fail, list them and get the user's go-ahead for publishing that incomplete result. Authorization to publish does not change the recorded verification verdicts.
 
 Per repo, from its worktree: skip repos with nothing ahead of `origin/<default>`. Push the branch (`git push -u origin <slug>`), including re-pushes after fixes. On a GitHub remote with `gh`, reuse an open PR for the branch if one exists, otherwise create one. Title per the project's commit convention, body per the template below. Without PR tooling, push and record `branch pushed`.
 

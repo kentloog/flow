@@ -16,7 +16,7 @@ Note any preparatory change that would make the implementation easier.
 
 ### 3. Identify durable architectural decisions
 
-Before slicing, find the decisions unlikely to change as phases are built: route structures and URL patterns, DB schema shape, key data models, auth approach, third-party service boundaries. These go in the plan header so every phase can reference them, including the acceptance-test interfaces copied from the spec's Testing Decisions. Required acceptance tests use those interfaces; supporting tests follow repository practice.
+Before slicing, identify the spec's binding architectural decisions and reference them in the plan header: public routes, schema contracts, auth requirements and service boundaries. Keep implementation suggestions provisional. Point to the spec's Testing Decisions for acceptance-test interfaces; required acceptance tests use those interfaces and supporting tests follow repository practice.
 
 ### 4. Draft vertical slices
 

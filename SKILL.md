@@ -42,6 +42,6 @@ Bundled paths are relative to this skill's directory. Workflow data lives under 
 - `implement` authorizes the local implement, review, fix and verify loop within the approved spec, across phases and compactions. Publishing, deploying and merging follow the user's actual authorization; the default endpoint is a result ready for human acceptance.
 - Accepted risks hold under their recorded conditions. Evidence that breaks a condition is surfaced, not designed around.
 - Required acceptance tests use the interfaces agreed in the spec; supporting tests follow repo practice. UI behaviour is verified in a browser.
-- Review is by the other model family unless config says `current`. Read `./simplicity-discipline.md` when implementing or reviewing.
+- Review is by the other model family unless config says `current`. Read `./simplicity-discipline.md` when making design decisions, implementing or reviewing.
 - Commits and PRs use the project's conventions and describe engineering changes, never internal phase names.
 - Workflow documents are temporary; complete moves durable lessons into the repo and deletes the folder. Prototypes never merge.

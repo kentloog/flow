@@ -27,16 +27,16 @@ A numbered list grouped by actor or capability area. Each story: As an <actor>, 
 
 ## Implementation Decisions
 
-Decisions synthesized from the idea's Settled Decisions, research, prototype findings, and the residual interview:
+Binding decisions synthesized from the idea's Settled Decisions, research, prototype findings, and the residual interview. Include only what constrains the outcome or a consequential contract:
 
-- The modules to build or modify, and their interfaces
+- Module responsibilities and interfaces when they are agreed contracts
 - Architectural decisions
 - Schema changes
 - API contracts (new or modified)
 - Cross-repo integration points
 - Key technical constraints or trade-offs
 
-No speculative file paths or implementation code - they go stale. DO include durable references that encode a decision more precisely than prose: schema shapes, type definitions, API contracts, prototype snippets or mockups (trimmed to the decision-rich parts).
+Leave internal decomposition and algorithms to implementation; label a suggested approach as provisional. No speculative file paths or implementation code. Include durable references that encode a decision more precisely than prose: schema shapes, type definitions, API contracts, prototype snippets or mockups (trimmed to the decision-rich parts).
 
 ## Accepted Risks & Tradeoffs
 

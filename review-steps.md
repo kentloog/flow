@@ -23,16 +23,16 @@ No bridge configured is a blocker to resolve in setup, never a silent fall back 
 
 ## Brief
 
-The reviewer sees none of your conversation. Write the brief to a file with absolute paths to `spec.md`, the worktrees and the base commits, the diff command (`git diff <base>...HEAD`), the accepted risks, and the repo's documented standards if any. Ask for two reports, each under 400 words:
+The reviewer sees none of your conversation. Write the brief to a file with absolute paths to `spec.md`, `plan.md`, `./simplicity-discipline.md`, the worktrees and the base commits, the diff command (`git diff <base>...HEAD`), the accepted risks, and the repo's documented standards if any. Pin the input versions per `./state-schema.md`. For unfinished work, include tracked and untracked changes explicitly and mark the pass partial. Ask for two concise reports, each targeting under 400 words without omitting actionable findings:
 
 - Spec: requirements missing or partial, behaviour nobody asked for, requirements that look implemented but wrong. Quote the spec line per finding.
-- Standards and simplicity: breaches of documented standards, and places where a concrete simpler design keeps the behaviour. Judgement calls labelled as such. Skip what tooling already enforces.
+- Standards and simplicity: correctness, security and data integrity, documented standards, and concrete opportunities to reduce complexity using the design principles. Label design smells as judgement calls; repo conventions override generic style preferences. Skip what tooling already enforces.
 
-Ask for everything with evidence; you filter. Asking the reviewer to be conservative makes it report less.
+Ask for everything with evidence; you filter. Asking the reviewer to be conservative makes it report less. Keep the two axes and their verdicts separate; a pass on one cannot compensate for a failure on the other.
 
 ## Triage and fix
 
-Check each finding against the code and the spec. Reject what the evidence does not support, what the spec accepted as a risk and pre-existing issues outside the change, and write down why. Group the valid findings into one fix unit per worktree. Reply in the reviewer's session with the dispositions, the fix commits and the check results, and ask it to reassess. Stop when no supported finding remains. A first pass with no findings needs no reply. A dispute that repeats without new evidence becomes an open decision for the human.
+Check each finding against the code and the spec. Reject what the evidence does not support, what the spec accepted as a risk and pre-existing issues outside the change, and write down why. Group the valid findings into one fix unit per worktree. Reply in the reviewer's session with the dispositions, the fix commits and the check results, and ask it to reassess. Stop when no supported finding remains. A first pass with no findings needs no reply. The coordinator resolves reversible design disagreements from evidence and records its reasoning. Escalate only unresolved material decisions outside the approved scope or failures at the repair limit.
 
 Depth follows the plan's readiness section: a single pass for small changes, pass plus reassessment when fixes were made or the plan asked for it.
 

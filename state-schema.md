@@ -37,6 +37,10 @@ tickets: {1: "#43"}              # phase -> tracker reference, when ticketed
 prototype_branches: {}           # repo -> parked prototype branch
 ```
 
-Phase status is `pending`, `in-progress`, `committed` or `failed`. Omit keys until they have content. Review and QA entries name the revisions they ran on; a later commit makes them stale, and `ready` needs both to match the current heads.
+Phase status is `pending`, `in-progress`, `committed` or `failed`. Omit keys until they have content.
+
+Current evidence covers the recorded code revisions and the spec and plan content hashes in each report. Dirty tracked files, untracked source, a new commit or changed inputs require reassessment before `ready` or push. Preserve unfinished changes; a matching HEAD alone does not certify them. Refresh affected evidence and state why retained evidence still applies; never just relabel an old PASS. An input-only change with no effect on coverage needs a recorded assessment, not repeated tests.
+
+`ready` requires all phases committed, clean delivery trees (apart from workflow data and known local runtime files), a full-scope clean review and local QA `PASS`, with current evidence and no unresolved blocker or required finding.
 
 `flow status` shows `status`, `next` and `blockers` first, then steps, the phases with the ready frontier, and the latest review and QA. `flow list` reads every `.flow/*/state.yaml` sorted by `updated` and lists map folders (`map.md`, no state) separately. A missing folder means the workflow completed or never existed.

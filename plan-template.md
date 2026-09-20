@@ -7,9 +7,9 @@
 
 ## Architectural Decisions
 
-Durable decisions that apply across all phases:
+References to the spec's binding decisions that apply across phases. Internal approaches remain provisional:
 
-- Acceptance-test interfaces: <copied from the spec's Testing Decisions>
+- Acceptance-test interfaces: <reference to the spec's Testing Decisions>
 - Routes: ...
 - Schema: ...
 - Key models: ...

@@ -3,6 +3,7 @@
 ## Pass 1, local | <env>, YYYY-MM-DD
 
 Revisions: <repo: sha>. Services: <how started; evidence the running code is this revision>.
+Inputs: <spec.md and plan.md content hashes>
 
 ### Criteria
 
